@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { list } from "@vercel/blob";
+import { cache } from "react";
 import Link from "next/link";
 
 function validImage(value?: string) {
@@ -6,12 +8,26 @@ function validImage(value?: string) {
   try { const url = new URL(value); return url.protocol === "https:" && url.hostname.endsWith("public.blob.vercel-storage.com") ? url.toString() : undefined; } catch { return undefined; }
 }
 
-export async function generateMetadata({ searchParams }: { searchParams: Promise<{ image?: string }> }): Promise<Metadata> {
-  const image = validImage((await searchParams).image);
+const storedImage = cache(async (id: string) => {
+  if (!/^[a-f0-9]{16}$/.test(id) || (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID)) return undefined;
+  try {
+    const result = await list({ prefix: `hh-goa-shares/${id}.png`, limit: 1 });
+    return validImage(result.blobs[0]?.url);
+  } catch { return undefined; }
+});
+
+async function resolveImage(id: string, legacyImage?: string) {
+  return (await storedImage(id)) || validImage(legacyImage);
+}
+
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ image?: string }> }): Promise<Metadata> {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
+  const image = await resolveImage(id, query.image);
   return { title: "HH Goa 2026 Builder Identity", description: "Ready for HH Goa 2026. #FrameInGoa", openGraph: { title: "HH Goa 2026 Builder Identity", description: "Less Noise. More Signal. #FrameInGoa", images: image ? [{ url: image, width: 1536, height: 1024 }] : [], type: "website" }, twitter: { card: "summary_large_image", title: "HH Goa 2026 Builder Identity", description: "Ready for HH Goa 2026. #FrameInGoa", images: image ? [image] : [] } };
 }
 
-export default async function SharePage({ searchParams }: { searchParams: Promise<{ image?: string }> }) {
-  const image=validImage((await searchParams).image);
+export default async function SharePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ image?: string }> }) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
+  const image = await resolveImage(id, query.image);
   return <main className="share-page"><div className="share-page-card"><span>GOA, INDIA · 28–31 OCT 2026</span><h1>A builder just framed in Goa.</h1>{image?<img src={image} alt="Shared HH Goa 2026 Builder ID"/>:<div className="missing-share">This shared entry is unavailable.</div>}<p>#FrameInGoa · गोवा</p><Link href="/">Create your builder identity →</Link></div></main>;
 }

@@ -18,7 +18,9 @@ export function BuilderCardPreview({ input }: { input: BuilderCardRenderInput })
       try {
         const debug = process.env.NODE_ENV !== "production" && new URLSearchParams(window.location.search).get("debugCard") === "1";
         const buffer = document.createElement("canvas");
-        await renderBuilderCard(buffer, input, { debug });
+        // The live canvas is half-size for fast typing on phones; final downloads
+        // still render at the full 1536 × 1024 export resolution.
+        await renderBuilderCard(buffer, input, { width: 768, height: 512, debug });
         if (!active || !canvasRef.current) return;
         const visible = canvasRef.current;
         visible.width = buffer.width;
@@ -37,7 +39,7 @@ export function BuilderCardPreview({ input }: { input: BuilderCardRenderInput })
   }, [input]);
 
   return <div className="builder-card-canvas-wrap" aria-busy={status === "rendering"}>
-    <canvas ref={canvasRef} width={1536} height={1024} aria-label="Live HH Goa Builder Card preview" />
+    <canvas ref={canvasRef} width={768} height={512} aria-label="Live HH Goa Builder Card preview" />
     {status === "rendering" && <span className="canvas-status">Rendering preview…</span>}
     {status === "error" && <span className="canvas-error" role="alert">{error}</span>}
   </div>;

@@ -1,7 +1,9 @@
 import type { PixelCrop } from "@/types/builder";
 
 const MAX_BYTES = 20 * 1024 * 1024;
-const MAX_SIDE = 4096;
+// Larger camera originals only increase decode time and memory; the exported
+// portrait region is far smaller, so 2560 px keeps excellent output quality.
+const MAX_SIDE = 2560;
 
 export async function prepareImage(file: File): Promise<Blob> {
   if (file.size > MAX_BYTES) throw new Error("That photo is over 20 MB. Choose a smaller file.");

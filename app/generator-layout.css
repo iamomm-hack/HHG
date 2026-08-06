@@ -24,4 +24,25 @@
   .generator-section {
     padding-top: 26px;
   }
+
+  .chips button,
+  .camera-button,
+  .export-list > button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .field textarea {
+    min-height: 96px;
+  }
+}
+
+@media (max-width: 900px) {
+  .controls-panel {
+    grid-row: 1;
+  }
+
+  .preview-panel {
+    grid-row: 2;
+  }
 }

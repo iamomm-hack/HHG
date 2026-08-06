@@ -10,7 +10,7 @@ import "./generator-layout.css";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: "HH Goa 2026 — Builder Identity",
-  description: "Create your HH Goa 2026 Builder ID and profile frame. No signup. Free and instant.",
+  description: "Create and download your HH Goa 2026 Builder ID. Automatic photo framing, no signup, and ready to share with #FrameInGoa.",
   openGraph: { title: "HH Goa 2026 Builder Identity", description: "Less noise. More signal. Build your official logbook entry.", type: "website" },
 };
 

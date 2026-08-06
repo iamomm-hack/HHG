@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const id = crypto.randomUUID().replaceAll("-", "").slice(0, 16);
     const blob = await put(`hh-goa-shares/${id}.png`, image, { access: "public", contentType: "image/png", addRandomSuffix: false });
     const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
-    const page = new URL(`/share/${id}`, origin); page.searchParams.set("image", blob.url);
-    return NextResponse.json({ id, url: page.toString() });
+    const page = new URL(`/share/${id}`, origin);
+    return NextResponse.json({ id, url: page.toString(), image: blob.url });
   } catch { return NextResponse.json({ error: "Could not create the share page." }, { status: 500 }); }
 }

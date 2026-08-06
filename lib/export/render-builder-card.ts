@@ -113,18 +113,28 @@ function drawBuilderStatement(ctx: CanvasRenderingContext2D, statement: string, 
 
   const maxWidth = 430 * scale;
   const maxLines = 3;
-  const lineHeight = 19 * scale;
   ctx.save();
-  ctx.font = `700 ${15 * scale}px "Victor Mono", monospace`;
   const words = cleanStatement.split(" ");
-  const lines: string[] = [];
-  let current = "";
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (ctx.measureText(candidate).width <= maxWidth || !current) current = candidate;
-    else { lines.push(current); current = word; }
+  const wrapAt = (fontSize: number) => {
+    ctx.font = `700 ${fontSize * scale}px "Victor Mono", monospace`;
+    const wrapped: string[] = [];
+    let current = "";
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (ctx.measureText(candidate).width <= maxWidth || !current) current = candidate;
+      else { wrapped.push(current); current = word; }
+    }
+    if (current) wrapped.push(current);
+    return wrapped;
+  };
+
+  let fontSize = 21;
+  let lines = wrapAt(fontSize);
+  while (lines.length > 2 && fontSize > 16) {
+    fontSize -= 1;
+    lines = wrapAt(fontSize);
   }
-  if (current) lines.push(current);
+  const lineHeight = (fontSize + 4) * scale;
   const visibleLines = lines.slice(0, maxLines);
   if (lines.length > maxLines) {
     let last = visibleLines[maxLines - 1];
@@ -135,7 +145,7 @@ function drawBuilderStatement(ctx: CanvasRenderingContext2D, statement: string, 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#063d2f";
-  const startY = 685 * scale;
+  const startY = (visibleLines.length === 1 ? 700 : visibleLines.length === 2 ? 690 : 681) * scale;
   visibleLines.forEach((line, index) => ctx.fillText(line, 1190 * scale, startY + index * lineHeight, maxWidth));
   ctx.restore();
 }
