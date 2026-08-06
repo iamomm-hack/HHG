@@ -10,8 +10,8 @@ export default function CropEditor({ image, mode, value, onChange }: Props) {
   const complete = (_: Area, pixels: Area) => onChange({ ...value, pixels });
   return <div className="crop-wrap">
     <div className={`crop-stage ${mode === "profile" ? "is-profile" : ""}`}>
-      <Cropper image={image} crop={value.crop} zoom={value.zoom} aspect={mode === "profile" ? 1 : 16/10}
-        cropShape={mode === "profile" ? "round" : "rect"} showGrid objectFit="horizontal-cover"
+      <Cropper image={image} crop={value.crop} zoom={value.zoom} aspect={1}
+        cropShape="round" showGrid objectFit="horizontal-cover"
         onCropChange={(crop) => onChange({ ...value, crop })} onZoomChange={(zoom) => onChange({ ...value, zoom })} onCropComplete={complete} />
     </div>
     <div className="zoom-row">

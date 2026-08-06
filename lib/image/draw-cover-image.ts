@@ -1,0 +1,38 @@
+import type { PhotoTransform } from "@/types/builder-card";
+import type { PixelCrop } from "@/types/builder";
+
+interface DrawCoverOptions {
+  centerX: number;
+  centerY: number;
+  radius: number;
+  renderScale: number;
+  transform: PhotoTransform;
+  sourceCrop?: PixelCrop | null;
+}
+
+export function drawCoverImage(ctx: CanvasRenderingContext2D, image: HTMLImageElement, options: DrawCoverOptions) {
+  const { renderScale, transform, sourceCrop } = options;
+  const centerX = options.centerX * renderScale;
+  const centerY = options.centerY * renderScale;
+  const radius = options.radius * renderScale;
+  const diameter = radius * 2;
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.clip();
+
+  if (sourceCrop && sourceCrop.width > 0 && sourceCrop.height > 0) {
+    ctx.drawImage(image, sourceCrop.x, sourceCrop.y, sourceCrop.width, sourceCrop.height, centerX - radius, centerY - radius, diameter, diameter);
+  } else {
+    const baseScale = Math.max(diameter / image.naturalWidth, diameter / image.naturalHeight);
+    const drawScale = baseScale * Math.max(1, transform.zoom);
+    const width = image.naturalWidth * drawScale;
+    const height = image.naturalHeight * drawScale;
+    const x = centerX - width / 2 + transform.offsetX * renderScale;
+    const y = centerY - height / 2 + transform.offsetY * renderScale;
+    ctx.drawImage(image, x, y, width, height);
+  }
+  ctx.restore();
+}
