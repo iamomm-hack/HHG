@@ -28,7 +28,7 @@ export function BuilderGenerator(){
   const [exporting,setExporting]=useState<string|null>(null);
   const [sessionSeed,setSessionSeed]=useState("hhgoa-session");
   const title=useMemo(()=>generateTitle(details,reroll),[details,reroll]); const number=useMemo(()=>builderNumber(details.name,sessionSeed),[details.name,sessionSeed]);
-  const cardInput=useMemo<BuilderCardRenderInput>(()=>({details:{name:details.name,role:details.role,stack:details.stack,xUsername:details.x,builderTitle:title,builderNumber:number},photoUrl:photo,photoTransform:{zoom:1,offsetX:0,offsetY:0},photoCrop:null}),[details.name,details.role,details.stack,details.x,title,number,photo]);
+  const cardInput=useMemo<BuilderCardRenderInput>(()=>({details:{name:details.name,role:details.role,stack:details.stack,xUsername:details.x,statement:details.statement,builderTitle:title,builderNumber:number},photoUrl:photo,photoTransform:{zoom:1,offsetX:0,offsetY:0},photoCrop:null}),[details.name,details.role,details.stack,details.x,details.statement,title,number,photo]);
 
   useEffect(()=>{try{const raw=sessionStorage.getItem("hhgoa-details");if(raw){const stored={...emptyDetails,...JSON.parse(raw)} as BuilderDetails;setDetails({...stored,stack:stored.stack.filter(value=>value!=="Soroban"&&value!=="Stellar")})}sessionStorage.removeItem("hhgoa-theme");let storedSeed=sessionStorage.getItem("hhgoa-seed");if(!storedSeed){storedSeed=crypto.randomUUID();sessionStorage.setItem("hhgoa-seed",storedSeed)}setSessionSeed(storedSeed);}catch{}},[]);
   useEffect(()=>{try{sessionStorage.setItem("hhgoa-details",JSON.stringify(details))}catch{}},[details]);

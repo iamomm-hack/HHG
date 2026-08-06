@@ -62,7 +62,7 @@ function roundedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, wi
   ctx.closePath();
 }
 
-function drawXHandle(ctx: CanvasRenderingContext2D, username: string, scale: number) {
+function drawXHandle(ctx: CanvasRenderingContext2D, username: string, icon: HTMLImageElement, scale: number) {
   const cleanUsername = username.replace(/^@+/, "").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 39);
   if (!cleanUsername) return;
 
@@ -93,25 +93,50 @@ function drawXHandle(ctx: CanvasRenderingContext2D, username: string, scale: num
 
   const iconX = x + horizontalPadding + iconSize / 2;
   const iconY = y + height / 2;
+  ctx.save();
   ctx.beginPath();
   ctx.arc(iconX, iconY, iconSize / 2, 0, Math.PI * 2);
-  ctx.fillStyle = "#063d2f";
-  ctx.fill();
-
-  ctx.strokeStyle = "#f6e0b1";
-  ctx.lineWidth = 3.2 * scale;
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(iconX - 8 * scale, iconY - 10 * scale);
-  ctx.lineTo(iconX + 8 * scale, iconY + 10 * scale);
-  ctx.moveTo(iconX + 8 * scale, iconY - 10 * scale);
-  ctx.lineTo(iconX - 8 * scale, iconY + 10 * scale);
-  ctx.stroke();
+  ctx.clip();
+  ctx.drawImage(icon, iconX - iconSize / 2, iconY - iconSize / 2, iconSize, iconSize);
+  ctx.restore();
 
   ctx.fillStyle = "#063d2f";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   ctx.fillText(handle, x + horizontalPadding + iconSize + gap, y + height / 2);
+  ctx.restore();
+}
+
+function drawBuilderStatement(ctx: CanvasRenderingContext2D, statement: string, scale: number) {
+  const cleanStatement = statement.replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 90);
+  if (!cleanStatement) return;
+
+  const maxWidth = 430 * scale;
+  const maxLines = 3;
+  const lineHeight = 19 * scale;
+  ctx.save();
+  ctx.font = `700 ${15 * scale}px "Victor Mono", monospace`;
+  const words = cleanStatement.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (ctx.measureText(candidate).width <= maxWidth || !current) current = candidate;
+    else { lines.push(current); current = word; }
+  }
+  if (current) lines.push(current);
+  const visibleLines = lines.slice(0, maxLines);
+  if (lines.length > maxLines) {
+    let last = visibleLines[maxLines - 1];
+    while (last.length > 1 && ctx.measureText(`${last}…`).width > maxWidth) last = last.slice(0, -1);
+    visibleLines[maxLines - 1] = `${last.trimEnd()}…`;
+  }
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#063d2f";
+  const startY = 685 * scale;
+  visibleLines.forEach((line, index) => ctx.fillText(line, 1190 * scale, startY + index * lineHeight, maxWidth));
   ctx.restore();
 }
 
@@ -141,6 +166,7 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
   await document.fonts.ready.catch(() => undefined);
   const template = await loadBrowserImage(BUILDER_CARD_TEMPLATE_URL, true);
+  const xIcon = input.details.xUsername ? await loadBrowserImage("/icons/x-logo.png", true) : null;
   ctx.drawImage(template, 0, 0, width, height);
   if (input.photoUrl) {
     const photo = await loadBrowserImage(input.photoUrl);
@@ -155,7 +181,8 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   drawCenteredText(ctx, name, builderCardLayout.name, scaleX);
   drawCenteredText(ctx, name && role && stack ? title : "", builderCardLayout.builderTitle, scaleX);
   drawCenteredText(ctx, roleStack, builderCardLayout.roleStack, scaleX);
-  drawXHandle(ctx, input.details.xUsername, scaleX);
+  if (xIcon) drawXHandle(ctx, input.details.xUsername, xIcon, scaleX);
+  drawBuilderStatement(ctx, input.details.statement, scaleX);
   drawCenteredText(ctx, name ? "BUILDER NO." : "", builderCardLayout.builderNumberLabel, scaleX);
   drawCenteredText(ctx, name ? number : "", builderCardLayout.builderNumber, scaleX);
   if (options.debug && process.env.NODE_ENV !== "production") drawDebugOverlay(ctx, scaleX);
