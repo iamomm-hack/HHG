@@ -1,0 +1,18 @@
+.generator-section {
+  padding-top: 34px;
+}
+
+.section-heading {
+  margin-bottom: 34px;
+}
+
+.site-footer {
+  background: #101310;
+  border-top-color: rgba(255, 255, 255, 0.13);
+}
+
+@media (max-width: 560px) {
+  .generator-section {
+    padding-top: 26px;
+  }
+}

@@ -5,6 +5,7 @@ import "@fontsource/victor-mono/700.css";
 import "@fontsource/imbue/500.css";
 import "@fontsource/imbue/700.css";
 import "./globals.css";
+import "./generator-layout.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
