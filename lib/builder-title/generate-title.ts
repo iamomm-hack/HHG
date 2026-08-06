@@ -28,6 +28,13 @@ const roleTitles: Record<string, string[]> = {
   "smart contract developer": ["Smart Contract Architect", "Onchain Logic Builder", "Protocol Crafter"],
 };
 const fallbacks = ["Product Systems Builder", "Shipping-First Maker", "Applied Technology Builder", "Independent Product Crafter", "Systems Explorer"];
+const stackFocus: Record<string, string> = {
+  soroban: "Soroban", stellar: "Stellar Network", rust: "Rust Systems", react: "Interface", "next.js": "Web Systems",
+  typescript: "Type-Safe Systems", solidity: "Onchain", move: "Move Protocol", ai: "AI Product", backend: "Backend Systems",
+  "full stack": "Full-Stack", mobile: "Mobile Experience", design: "Design Systems", devrel: "Developer Experience",
+  "open source": "Open-Source", infrastructure: "Infrastructure",
+};
+const suffixes = ["Builder", "Architect", "Crafter", "Navigator", "Explorer", "Operator", "Pioneer"];
 
 export function stableHash(input: string) {
   let h = 2166136261;
@@ -38,7 +45,11 @@ export function stableHash(input: string) {
 export function generateTitle(details: BuilderDetails, reroll = 0) {
   const role = details.role.toLowerCase();
   const pools = details.stack.map((s) => stackTitles[s.toLowerCase()]).filter(Boolean);
-  const combined = [...new Set([...(pools.flat()), ...(roleTitles[role] ?? []), ...fallbacks])];
+  const composed = details.stack.flatMap((stack) => {
+    const focus = stackFocus[stack.toLowerCase()] ?? stack.replace(/[^a-zA-Z0-9 +.-]/g, "").trim().slice(0, 18);
+    return focus ? suffixes.filter((suffix) => !focus.toLowerCase().includes(suffix.toLowerCase())).map((suffix) => `${focus} ${suffix}`) : [];
+  });
+  const combined = [...new Set([...(pools.flat()), ...(roleTitles[role] ?? []), ...composed, ...fallbacks])].filter((value) => value.length <= 34);
   return combined[(stableHash(`${details.name}|${role}|${details.stack.join("|")}`) + reroll * 7) % combined.length];
 }
 
