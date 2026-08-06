@@ -1,0 +1,36 @@
+{
+  "name": "hh-goa-builder-identity",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@fontsource/imbue": "^5.2.6",
+    "@fontsource/victor-mono": "^5.2.5",
+    "@vercel/blob": "^1.1.1",
+    "framer-motion": "^12.23.12",
+    "heic2any": "^0.0.4",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.468.0",
+    "next": "15.5.2",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "react-dropzone": "^14.3.8",
+    "react-easy-crop": "^5.5.0",
+    "sonner": "^2.0.7",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.3",
+    "@types/react-dom": "^19.0.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.1.12",
+    "@tailwindcss/postcss": "^4.1.12",
+    "typescript": "^5.7.2"
+  }
+}
