@@ -36,12 +36,13 @@ export interface LayoutTextRegion {
   fontWeight: number;
   color: string;
   letterSpacing?: number;
+  strokeWidth?: number;
 }
 
 export interface BuilderCardLayout {
   templateWidth: number;
   templateHeight: number;
-  portrait: { centerX: number; centerY: number; radius: number };
+  portrait: { centerX: number; centerY: number; radiusX: number; radiusY: number };
   name: LayoutTextRegion;
   builderTitle: LayoutTextRegion;
   roleStack: LayoutTextRegion;

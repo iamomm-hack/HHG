@@ -33,11 +33,15 @@ function drawCenteredText(ctx: CanvasRenderingContext2D, text: string, region: L
   const size = fitTextToWidth(ctx, text, region, scale);
   ctx.font = `${region.fontWeight} ${size * scale}px "${region.fontFamily}", ${region.fontFamily === "Imbue" ? "Georgia, serif" : "monospace"}`;
   ctx.fillStyle = region.color;
+  ctx.strokeStyle = region.color;
+  ctx.lineJoin = "round";
+  ctx.lineWidth = (region.strokeWidth ?? 0) * scale;
   ctx.textBaseline = "alphabetic";
   const spacing = (region.letterSpacing ?? 0) * scale;
   const width = measureSpacedText(ctx, text, spacing);
   let x = region.centerX * scale - width / 2;
   for (const character of text) {
+    if (region.strokeWidth) ctx.strokeText(character, x, region.baselineY * scale);
     ctx.fillText(character, x, region.baselineY * scale);
     x += ctx.measureText(character).width + spacing;
   }
@@ -46,7 +50,7 @@ function drawCenteredText(ctx: CanvasRenderingContext2D, text: string, region: L
 function drawDebugOverlay(ctx: CanvasRenderingContext2D, scale: number) {
   const { portrait, name, builderTitle, roleStack, builderNumber } = builderCardLayout;
   ctx.save(); ctx.strokeStyle = "#00e5ff"; ctx.fillStyle = "#00e5ff"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(portrait.centerX * scale, portrait.centerY * scale, portrait.radius * scale, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(portrait.centerX * scale, portrait.centerY * scale, portrait.radiusX * scale, portrait.radiusY * scale, 0, 0, Math.PI * 2); ctx.stroke();
   ctx.beginPath(); ctx.moveTo((portrait.centerX - 16) * scale, portrait.centerY * scale); ctx.lineTo((portrait.centerX + 16) * scale, portrait.centerY * scale); ctx.moveTo(portrait.centerX * scale, (portrait.centerY - 16) * scale); ctx.lineTo(portrait.centerX * scale, (portrait.centerY + 16) * scale); ctx.stroke();
   for (const [label, region] of [["NAME", name], ["TITLE", builderTitle], ["ROLE/STACK", roleStack], ["NUMBER", builderNumber]] as const) {
     const left = (region.centerX - region.maxWidth / 2) * scale; const y = region.baselineY * scale;
@@ -79,7 +83,7 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   const role = normalizeDisplayText(input.details.role);
   const stack = truncateStackDisplay(input.details.stack);
   const roleStack = [role, stack].filter(Boolean).join(" · ");
-  const number = input.details.builderNumber.replace(/\D/g, "").slice(-4).padStart(4, "0");
+  const number = `BUILDER NO. #${input.details.builderNumber.replace(/\D/g, "").slice(-4).padStart(4, "0")}`;
   drawCenteredText(ctx, name, builderCardLayout.name, scaleX);
   drawCenteredText(ctx, name && role && stack ? title : "", builderCardLayout.builderTitle, scaleX);
   drawCenteredText(ctx, roleStack, builderCardLayout.roleStack, scaleX);
