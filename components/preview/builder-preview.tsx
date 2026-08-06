@@ -14,7 +14,7 @@ export function BuilderPreview({ image, details, title, number, theme, mode, cro
   </div>;
   return <div className={`card-preview theme-${theme}`} style={{"--bg":t.bg,"--panel":t.panel,"--text":t.text,"--muted":t.muted,"--a":t.accentA,"--b":t.accentB,"--grid":t.grid} as React.CSSProperties}>
     <div className="card-meta"><span>GOA, INDIA · 28–31 OCT 2026</span><b>{number}</b></div>
-    <div className="day-meta"><span>{t.day} — {t.name}</span><span>{t.note}</span></div>
+    <div className="day-meta"><span>LAUNCH MODE</span><span>{t.note}</span></div>
     <div className="portrait" style={image?{backgroundImage:`linear-gradient(transparent 55%,rgba(0,0,0,.62)),url(${image})`,backgroundPosition:cropPosition}:{}}>{!image&&<span>DROP IN<br/>YOUR SIGNAL</span>}</div>
     <div className="identity"><h3>{(details.name||"YOUR NAME").toUpperCase()}</h3><strong>{title}</strong><p>{(details.role||"PRIMARY ROLE").toUpperCase()}</p><div>{details.stack.length?details.stack.slice(0,4).join(" · ").toUpperCase():"STACK · GOES · HERE"}</div>{details.statement&&<blockquote>“{details.statement}”</blockquote>}</div>
     <div className="matrix" aria-hidden="true">{Array.from({length:25},(_,i)=><i key={i} className={(i*7+number.charCodeAt(2))%3===0?"on":""}/>)}</div>

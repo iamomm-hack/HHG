@@ -50,7 +50,7 @@ export async function renderBuilderCard(payload: ExportPayload) {
   const glow=ctx.createRadialGradient(800,150,20,800,150,650); glow.addColorStop(0,`${t.accentB}77`); glow.addColorStop(1,"transparent"); ctx.fillStyle=glow; ctx.fillRect(0,0,1080,800);
   roundRect(ctx,32,32,1016,1286,42); ctx.strokeStyle="rgba(255,255,255,.18)"; ctx.lineWidth=2; ctx.stroke();
   stamp(ctx,76,92,1004,t.accentA,payload.number);
-  ctx.font=`600 20px ${mono}`; ctx.fillStyle=t.muted; ctx.fillText(`${t.day} — ${t.name}`,76,144); ctx.textAlign="right"; ctx.fillText(t.note,1004,144); ctx.textAlign="left";
+  ctx.font=`600 20px ${mono}`; ctx.fillStyle=t.muted; ctx.fillText("LAUNCH MODE",76,144); ctx.textAlign="right"; ctx.fillText(t.note,1004,144); ctx.textAlign="left";
   const px=76,py=196,pw=928,ph=565; roundRect(ctx,px,py,pw,ph,32); ctx.save(); ctx.clip(); drawCropped(ctx,payload.photo,payload.cardCrop,px,py,pw,ph); const shade=ctx.createLinearGradient(0,py,0,py+ph); shade.addColorStop(.55,"transparent"); shade.addColorStop(1,"rgba(0,0,0,.58)"); ctx.fillStyle=shade;ctx.fillRect(px,py,pw,ph);ctx.restore();
   const ring=ctx.createLinearGradient(px,py,px+pw,py+ph); ring.addColorStop(0,t.accentA);ring.addColorStop(1,t.accentB);ctx.strokeStyle=ring;ctx.lineWidth=9;roundRect(ctx,px,py,pw,ph,32);ctx.stroke();
   ctx.fillStyle=t.text; const name=payload.details.name.toUpperCase(); const nameSize=fitText(ctx,name,740,78,44,display,700);ctx.font=`700 ${nameSize}px ${display}`;ctx.fillText(name,76,865);
