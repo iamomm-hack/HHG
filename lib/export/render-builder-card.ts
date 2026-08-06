@@ -150,6 +150,25 @@ function drawBuilderStatement(ctx: CanvasRenderingContext2D, statement: string, 
   ctx.restore();
 }
 
+function redrawPortraitInnerBorder(ctx: CanvasRenderingContext2D, scale: number) {
+  const { portrait } = builderCardLayout;
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(
+    portrait.centerX * scale,
+    portrait.centerY * scale,
+    (portrait.radiusX + 1.5) * scale,
+    (portrait.radiusY + 1.5) * scale,
+    0,
+    0,
+    Math.PI * 2,
+  );
+  ctx.strokeStyle = "#173f2d";
+  ctx.lineWidth = 3.5 * scale;
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawDebugOverlay(ctx: CanvasRenderingContext2D, scale: number) {
   const { portrait, name, builderTitle, roleStack, builderNumberLabel, builderNumber } = builderCardLayout;
   ctx.save(); ctx.strokeStyle = "#00e5ff"; ctx.fillStyle = "#00e5ff"; ctx.lineWidth = 1;
@@ -181,6 +200,7 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   if (input.photoUrl) {
     const photo = await loadBrowserImage(input.photoUrl);
     drawCoverImage(ctx, photo, { ...builderCardLayout.portrait, renderScale: scaleX, transform: input.photoTransform, sourceCrop: input.photoCrop });
+    redrawPortraitInnerBorder(ctx, scaleX);
   }
   const name = normalizeDisplayText(input.details.name).slice(0, 38);
   const title = normalizeDisplayText(input.details.builderTitle).slice(0, 42);

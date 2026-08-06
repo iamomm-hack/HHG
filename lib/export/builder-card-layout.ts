@@ -9,7 +9,7 @@ export const BUILDER_CARD_TEMPLATE_URL = "/templates/hh-goa-builder-card-templat
 export const builderCardLayout: BuilderCardLayout = {
   templateWidth: TEMPLATE_WIDTH,
   templateHeight: TEMPLATE_HEIGHT,
-  portrait: { centerX: 669, centerY: 454, radiusX: 240, radiusY: 264 },
+  portrait: { centerX: 669, centerY: 454, radiusX: 245, radiusY: 264 },
   name: {
     centerX: 1190,
     baselineY: 430,
