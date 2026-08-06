@@ -46,6 +46,7 @@ export interface BuilderCardLayout {
   name: LayoutTextRegion;
   builderTitle: LayoutTextRegion;
   roleStack: LayoutTextRegion;
+  builderNumberLabel: LayoutTextRegion;
   builderNumber: LayoutTextRegion;
 }
 

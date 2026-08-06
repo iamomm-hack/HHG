@@ -21,7 +21,7 @@ npm start
 
 ## Exports
 
-- Builder ID Card: exact 1080 × 1350 PNG
+- Builder ID Card: exact 1536 × 1024 PNG
 - Complete profile picture: exact 1080 × 1080 PNG
 - Transparent frame-only graphic: exact 1080 × 1080 PNG
 - ZIP: all three outputs, generated lazily

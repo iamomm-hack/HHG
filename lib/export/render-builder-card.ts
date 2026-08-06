@@ -48,11 +48,11 @@ function drawCenteredText(ctx: CanvasRenderingContext2D, text: string, region: L
 }
 
 function drawDebugOverlay(ctx: CanvasRenderingContext2D, scale: number) {
-  const { portrait, name, builderTitle, roleStack, builderNumber } = builderCardLayout;
+  const { portrait, name, builderTitle, roleStack, builderNumberLabel, builderNumber } = builderCardLayout;
   ctx.save(); ctx.strokeStyle = "#00e5ff"; ctx.fillStyle = "#00e5ff"; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.ellipse(portrait.centerX * scale, portrait.centerY * scale, portrait.radiusX * scale, portrait.radiusY * scale, 0, 0, Math.PI * 2); ctx.stroke();
   ctx.beginPath(); ctx.moveTo((portrait.centerX - 16) * scale, portrait.centerY * scale); ctx.lineTo((portrait.centerX + 16) * scale, portrait.centerY * scale); ctx.moveTo(portrait.centerX * scale, (portrait.centerY - 16) * scale); ctx.lineTo(portrait.centerX * scale, (portrait.centerY + 16) * scale); ctx.stroke();
-  for (const [label, region] of [["NAME", name], ["TITLE", builderTitle], ["ROLE/STACK", roleStack], ["NUMBER", builderNumber]] as const) {
+  for (const [label, region] of [["NAME", name], ["TITLE", builderTitle], ["ROLE/STACK", roleStack], ["NUMBER LABEL", builderNumberLabel], ["NUMBER", builderNumber]] as const) {
     const left = (region.centerX - region.maxWidth / 2) * scale; const y = region.baselineY * scale;
     ctx.strokeRect(left, y - region.fontSize * scale, region.maxWidth * scale, region.fontSize * 1.25 * scale);
     ctx.font = `${10 * scale}px monospace`; ctx.fillText(`${label} y:${region.baselineY}`, left, y - region.fontSize * scale - 5);
@@ -65,7 +65,7 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   const height = options.height ?? BUILDER_CARD_HEIGHT;
   const scaleX = width / builderCardLayout.templateWidth;
   const scaleY = height / builderCardLayout.templateHeight;
-  if (Math.abs(scaleX - scaleY) > 0.0001) throw new Error("Builder Card output must preserve the template's 4:5 aspect ratio.");
+  if (Math.abs(scaleX - scaleY) > 0.0001) throw new Error("Builder Card output must preserve the template aspect ratio.");
   canvas.width = width; canvas.height = height;
   const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) throw new Error("Canvas rendering is unavailable in this browser.");
@@ -83,10 +83,11 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   const role = normalizeDisplayText(input.details.role);
   const stack = truncateStackDisplay(input.details.stack);
   const roleStack = [role, stack].filter(Boolean).join(" · ");
-  const number = `BUILDER NO. #${input.details.builderNumber.replace(/\D/g, "").slice(-4).padStart(4, "0")}`;
+  const number = `#${input.details.builderNumber.replace(/\D/g, "").slice(-4).padStart(4, "0")}`;
   drawCenteredText(ctx, name, builderCardLayout.name, scaleX);
   drawCenteredText(ctx, name && role && stack ? title : "", builderCardLayout.builderTitle, scaleX);
   drawCenteredText(ctx, roleStack, builderCardLayout.roleStack, scaleX);
+  drawCenteredText(ctx, name ? "BUILDER NO." : "", builderCardLayout.builderNumberLabel, scaleX);
   drawCenteredText(ctx, name ? number : "", builderCardLayout.builderNumber, scaleX);
   if (options.debug && process.env.NODE_ENV !== "production") drawDebugOverlay(ctx, scaleX);
 }

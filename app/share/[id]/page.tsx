@@ -8,7 +8,7 @@ function validImage(value?: string) {
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ image?: string }> }): Promise<Metadata> {
   const image = validImage((await searchParams).image);
-  return { title: "HH Goa 2026 Builder Identity", description: "Ready for HH Goa 2026. #FrameInGoa", openGraph: { title: "HH Goa 2026 Builder Identity", description: "Less Noise. More Signal. #FrameInGoa", images: image ? [{ url: image, width: 1080, height: 1350 }] : [], type: "website" }, twitter: { card: "summary_large_image", title: "HH Goa 2026 Builder Identity", description: "Ready for HH Goa 2026. #FrameInGoa", images: image ? [image] : [] } };
+  return { title: "HH Goa 2026 Builder Identity", description: "Ready for HH Goa 2026. #FrameInGoa", openGraph: { title: "HH Goa 2026 Builder Identity", description: "Less Noise. More Signal. #FrameInGoa", images: image ? [{ url: image, width: 1536, height: 1024 }] : [], type: "website" }, twitter: { card: "summary_large_image", title: "HH Goa 2026 Builder Identity", description: "Ready for HH Goa 2026. #FrameInGoa", images: image ? [image] : [] } };
 }
 
 export default async function SharePage({ searchParams }: { searchParams: Promise<{ image?: string }> }) {

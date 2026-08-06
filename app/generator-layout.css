@@ -11,6 +11,15 @@
   border-top-color: rgba(255, 255, 255, 0.13);
 }
 
+.preview-stage.card-stage > div {
+  width: min(100%, 760px);
+}
+
+.builder-card-canvas-wrap,
+.builder-card-canvas-wrap canvas {
+  aspect-ratio: 3 / 2;
+}
+
 @media (max-width: 560px) {
   .generator-section {
     padding-top: 26px;
