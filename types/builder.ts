@@ -5,7 +5,6 @@ export interface BuilderDetails {
   name: string;
   role: string;
   stack: string[];
-  github: string;
   x: string;
   statement: string;
 }

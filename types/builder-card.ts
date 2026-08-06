@@ -4,6 +4,7 @@ export interface BuilderCardDetails {
   name: string;
   role: string;
   stack: string[];
+  xUsername: string;
   builderTitle: string;
   builderNumber: string;
 }
