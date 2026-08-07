@@ -62,29 +62,29 @@ function roundedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, wi
   ctx.closePath();
 }
 
-function drawXHandle(ctx: CanvasRenderingContext2D, username: string, icon: HTMLImageElement, region: BuilderCardLayout["social"], scale: number) {
+function drawXHandle(ctx: CanvasRenderingContext2D, username: string, icon: HTMLImageElement, region: BuilderCardLayout["social"], scale: number, compact = false) {
   const cleanUsername = username.replace(/^@+/, "").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 39);
   if (!cleanUsername) return;
 
   const handle = `@${cleanUsername}`;
-  let fontSize = 24 * scale;
-  const iconSize = 38 * scale;
-  const horizontalPadding = 18 * scale;
-  const gap = 12 * scale;
-  const height = 56 * scale;
+  let fontSize = (compact ? 15 : 24) * scale;
+  const iconSize = (compact ? 23 : 38) * scale;
+  const horizontalPadding = (compact ? 10 : 18) * scale;
+  const gap = (compact ? 7 : 12) * scale;
+  const height = (compact ? 34 : 56) * scale;
   ctx.save();
   ctx.font = `700 ${fontSize}px "Victor Mono", monospace`;
   const maxTextWidth = region.maxWidth * scale - horizontalPadding * 2 - iconSize - gap;
-  while (fontSize > 15 * scale && ctx.measureText(handle).width > maxTextWidth) {
+  while (fontSize > (compact ? 11 : 15) * scale && ctx.measureText(handle).width > maxTextWidth) {
     fontSize -= scale;
     ctx.font = `700 ${fontSize}px "Victor Mono", monospace`;
   }
   const textWidth = ctx.measureText(handle).width;
-  const width = Math.min(region.maxWidth * scale, Math.max(190 * scale, horizontalPadding * 2 + iconSize + gap + textWidth));
+  const width = Math.min(region.maxWidth * scale, Math.max((compact ? 125 : 190) * scale, horizontalPadding * 2 + iconSize + gap + textWidth));
   const x = region.centerX * scale - width / 2;
   const y = region.y * scale;
 
-  roundedRectPath(ctx, x, y, width, height, 13 * scale);
+  roundedRectPath(ctx, x, y, width, height, (compact ? 8 : 13) * scale);
   ctx.fillStyle = "rgba(246, 224, 177, 0.86)";
   ctx.fill();
   ctx.strokeStyle = "#063d2f";
@@ -204,7 +204,8 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
   await document.fonts.ready.catch(() => undefined);
   const template = await loadBrowserImage(layout.templateUrl, true);
-  const xIcon = input.details.xUsername ? await loadBrowserImage("/icons/x-logo.png", true) : null;
+  const hasXHandle = Boolean(input.details.xUsername || input.memberXUsernames.some((username) => username.trim()));
+  const xIcon = hasXHandle ? await loadBrowserImage("/icons/x-logo.png", true) : null;
   ctx.drawImage(template, 0, 0, width, height);
   for (let index = 0; index < layout.portraits.length; index += 1) {
     const photoUrl = input.photoUrls[index];
@@ -218,12 +219,19 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
       drawCenteredText(ctx, normalizeDisplayText(input.memberNames[index] ?? "").slice(0, 26), region, scaleX);
     });
   }
+  if (input.teamSize === 2 && xIcon) {
+    layout.memberSocials.forEach((region, index) => {
+      drawXHandle(ctx, input.memberXUsernames[index] ?? "", xIcon, region, scaleX, true);
+    });
+  }
   const name = normalizeDisplayText(input.details.name).slice(0, 38);
+  const teamName = normalizeDisplayText(input.details.teamName).slice(0, 38);
   const title = normalizeDisplayText(input.details.builderTitle).slice(0, 42);
   const role = normalizeDisplayText(input.details.role);
   const stack = truncateStackDisplay(input.details.stack);
   const roleStack = [role, stack].filter(Boolean).join(" · ");
   const number = `#${input.details.builderNumber.replace(/\D/g, "").slice(-4).padStart(4, "0")}`;
+  if (input.teamSize === 1) drawCenteredText(ctx, teamName, layout.teamName, scaleX);
   drawCenteredText(ctx, name, layout.name, scaleX);
   drawCenteredText(ctx, name && role && stack ? title : "", layout.builderTitle, scaleX);
   drawCenteredText(ctx, roleStack, layout.roleStack, scaleX);

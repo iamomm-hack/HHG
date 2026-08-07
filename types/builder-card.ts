@@ -3,6 +3,7 @@ import type { PixelCrop } from "@/types/builder";
 export type TeamSize = 1 | 2 | 3;
 
 export interface BuilderCardDetails {
+  teamName: string;
   name: string;
   role: string;
   stack: string[];
@@ -27,6 +28,7 @@ export interface BuilderCardRenderInput {
   details: BuilderCardDetails;
   teamSize: TeamSize;
   memberNames: string[];
+  memberXUsernames: string[];
   photoUrls: Array<string | null>;
   photoTransforms: PhotoTransform[];
   photoCrops: Array<PixelCrop | null>;
@@ -51,6 +53,8 @@ export interface BuilderCardLayout {
   templateHeight: number;
   portraits: Array<{ centerX: number; centerY: number; radiusX: number; radiusY: number }>;
   memberNames: LayoutTextRegion[];
+  memberSocials: Array<{ centerX: number; y: number; maxWidth: number }>;
+  teamName: LayoutTextRegion;
   name: LayoutTextRegion;
   builderTitle: LayoutTextRegion;
   roleStack: LayoutTextRegion;

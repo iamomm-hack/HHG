@@ -2,6 +2,7 @@ export type ThemeId = "genesis" | "signal" | "build" | "launch";
 export type PreviewMode = "card" | "profile";
 
 export interface BuilderDetails {
+  teamName: string;
   name: string;
   role: string;
   stack: string[];
