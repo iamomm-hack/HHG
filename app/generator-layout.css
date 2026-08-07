@@ -665,6 +665,31 @@ body {
   border-color: rgba(11, 104, 57, 0.28);
 }
 
+.share-actions .x-button {
+  background: #0b0b0b;
+  color: #ffffff;
+  border: 1px solid #0b0b0b;
+  box-shadow: 4px 5px 0 #ff0080;
+}
+
+.share-actions .x-button:hover:not(:disabled) {
+  background: #242424;
+  transform: translate(1px, 1px);
+  box-shadow: 3px 4px 0 #ff0080;
+}
+
+.share-actions .copy-button {
+  background: #fee101;
+  color: #0b6839;
+  border: 1px solid #0b6839;
+  font-weight: 800;
+}
+
+.share-actions .copy-button:hover:not(:disabled) {
+  background: #ffea27;
+  border-color: #07512d;
+}
+
 .primary-button:disabled {
   opacity: 0.72;
   color: #0b6839;
