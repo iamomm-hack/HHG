@@ -14,15 +14,15 @@ export async function exportBuilderCard(input: BuilderCardRenderInput): Promise<
   return { blob, filename: `hh-goa-2026-${sanitizeBuilderFilename(input.details.name)}-builder-card.png`, width: canvas.width, height: canvas.height };
 }
 
-export async function exportBuilderSharePreview(input: BuilderCardRenderInput): Promise<Blob> {
+export async function exportBuilderSharePreview(input: BuilderCardRenderInput, mimeType: "image/jpeg" | "image/png" = "image/jpeg"): Promise<Blob> {
   const canvas = document.createElement("canvas");
   const layout = getBuilderCardLayout(input.teamSize);
-  const width = Math.min(1200, layout.templateWidth);
+  const width = Math.min(960, layout.templateWidth);
   const height = Math.round(width * layout.templateHeight / layout.templateWidth);
   await renderBuilderCard(canvas, input, { width, height, debug: false });
   return new Promise<Blob>((resolve, reject) => canvas.toBlob(
     (value) => value ? resolve(value) : reject(new Error("The share preview could not be created.")),
-    "image/jpeg",
-    0.84,
+    mimeType,
+    mimeType === "image/jpeg" ? 0.78 : undefined,
   ));
 }

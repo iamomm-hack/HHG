@@ -29,7 +29,7 @@ export function BuilderGenerator() {
   const uploadTargetRef = useRef(0);
   const cameraTargetRef = useRef(0);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
-  const controlsPanelRef = useRef<HTMLDivElement | null>(null);
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
   const sharingRef = useRef(false);
   const sharePreparingRef = useRef<Promise<string> | null>(null);
   const [processingIndex, setProcessingIndex] = useState<number | null>(null);
@@ -72,7 +72,7 @@ export function BuilderGenerator() {
   useEffect(() => { try { sessionStorage.setItem("hhgoa-details", JSON.stringify(details)); } catch {} }, [details]);
   useEffect(() => {
     if (step === 1) return;
-    const frame = window.requestAnimationFrame(() => controlsPanelRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }));
+    const frame = window.requestAnimationFrame(() => workspaceRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }));
     return () => window.cancelAnimationFrame(frame);
   }, [step, reduce]);
 
@@ -139,15 +139,27 @@ export function BuilderGenerator() {
     if (preparedShareUrl) return preparedShareUrl;
     if (sharePreparingRef.current) return sharePreparingRef.current;
     const task = (async () => {
+      const capability = await fetch("/api/share", { method: "GET", cache: "no-store" });
+      const state = capability.ok ? await capability.json() as { configured?: boolean } : { configured: false };
+      if (!state.configured) throw new Error("Image sharing is not configured on this server. Add BLOB_READ_WRITE_TOKEN to .env.local or use the deployed app.");
       const shareId = crypto.randomUUID().replaceAll("-", "").slice(0, 16);
-      const publicUrl = new URL(`/share/${shareId}`, window.location.origin).toString();
-      const blob = await exportBuilderSharePreview(cardInput);
-      const file = new File([blob], `hh-goa-2026-${slug}-${cardKind}-preview.jpg`, { type: "image/jpeg" });
-      const body = new FormData();
-      body.append("id", shareId);
-      body.append("image", file);
-      const response = await fetch("/api/share", { method: "POST", body });
-      if (!response.ok) throw new Error("The X image preview could not be uploaded.");
+      const publicOrigin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const publicUrl = new URL(`/share/${shareId}`, publicOrigin).toString();
+      const upload = async (mimeType: "image/jpeg" | "image/png") => {
+        const blob = await exportBuilderSharePreview(cardInput, mimeType);
+        const extension = mimeType === "image/jpeg" ? "jpg" : "png";
+        const file = new File([blob], `hh-goa-2026-${slug}-${cardKind}-preview.${extension}`, { type: mimeType });
+        const body = new FormData();
+        body.append("id", shareId);
+        body.append("image", file);
+        return fetch("/api/share", { method: "POST", body });
+      };
+      let response = await upload("image/jpeg");
+      if (!response.ok) response = await upload("image/png");
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({})) as { error?: string; detail?: string };
+        throw new Error(payload.detail || payload.error || "The X image preview could not be uploaded.");
+      }
       setPreparedShareUrl(publicUrl);
       return publicUrl;
     })();
@@ -190,7 +202,7 @@ export function BuilderGenerator() {
         if (!xWindow) window.location.assign(intent);
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "The X image preview could not be prepared.");
+      toast.error(error instanceof Error ? error.message : "The generated X image preview could not be prepared.", { duration: 10000 });
     } finally { sharingRef.current = false; setExporting(null); }
   }
 
@@ -216,8 +228,8 @@ export function BuilderGenerator() {
           <div><img src="/brand/hhgoa-goa.svg" alt="Goa" /><img src="/brand/hhgoa-247.svg" alt="2:47" /></div>
         </div>
       </div>
-      <div className="workspace">
-        <div className="controls-panel" ref={controlsPanelRef}>
+      <div className={`workspace ${step === 3 ? "export-step" : ""}`} ref={workspaceRef}>
+        <div className="controls-panel">
           <nav className="steps three-steps" aria-label="Generator steps">{([[1, "PHOTO"], [2, "DETAILS"], [3, "EXPORT"]] as const).map(([number, label]) => <button key={number} onClick={() => number <= step && setStep(number)} className={step === number ? "active" : step > number ? "done" : ""}><span>{step > number ? <Check size={14} /> : `0${number}`}</span>{label}</button>)}</nav>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={step} className="step-content" initial={reduce ? false : { opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={reduce ? {} : { opacity: 0, x: -10 }} transition={{ duration: .18 }}>

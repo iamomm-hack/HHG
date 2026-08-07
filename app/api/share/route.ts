@@ -21,9 +21,21 @@ export async function POST(request: Request) {
     if (image.size > 8 * 1024 * 1024) return NextResponse.json({ error: "PNG is too large." }, { status: 413 });
     const id = typeof requestedId === "string" && /^[a-f0-9]{16}$/.test(requestedId) ? requestedId : crypto.randomUUID().replaceAll("-", "").slice(0, 16);
     const extension = image.type === "image/jpeg" ? "jpg" : image.type === "image/webp" ? "webp" : "png";
-    const blob = await put(`hh-goa-shares/${id}.${extension}`, image, { access: "public", contentType: image.type, addRandomSuffix: false });
+    const blob = await put(`hh-goa-shares/${id}.${extension}`, image, {
+      access: "public",
+      contentType: image.type,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      oidcToken: process.env.VERCEL_OIDC_TOKEN,
+      storeId: process.env.BLOB_STORE_ID,
+    });
     const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
     const page = new URL(`/share/${id}`, origin);
     return NextResponse.json({ id, url: page.toString(), image: blob.url });
-  } catch { return NextResponse.json({ error: "Could not create the share page." }, { status: 500 }); }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Unknown Blob upload error.";
+    console.error("HH Goa share upload failed:", detail);
+    return NextResponse.json({ error: "Could not upload the X image preview.", detail }, { status: 500 });
+  }
 }
