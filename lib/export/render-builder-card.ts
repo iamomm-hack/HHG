@@ -219,7 +219,7 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
       drawCenteredText(ctx, normalizeDisplayText(input.memberNames[index] ?? "").slice(0, 26), region, scaleX);
     });
   }
-  if (input.teamSize === 2 && xIcon) {
+  if (input.teamSize > 1 && xIcon) {
     layout.memberSocials.forEach((region, index) => {
       drawXHandle(ctx, input.memberXUsernames[index] ?? "", xIcon, region, scaleX, true);
     });
