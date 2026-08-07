@@ -25,7 +25,7 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
   const stored = await resolveImage(id, query.image);
   const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const image = stored || (/^[a-f0-9]{16}$/.test(id) ? new URL(`/api/share/${id}`, origin).toString() : undefined);
-  return { title: "Generated HH Goa 2026 Builder ID", description: "Open this generated HH Goa Builder ID. #FrameInGoa", openGraph: { title: "Generated HH Goa 2026 Builder ID", description: "Less Noise. More Signal. #FrameInGoa", images: image ? [{ url: image, width: 1536, height: 1024, alt: "Generated HH Goa 2026 Builder ID" }] : [], type: "website" }, twitter: { card: "summary_large_image", title: "Generated HH Goa 2026 Builder ID", description: "Open this generated HH Goa Builder ID. #FrameInGoa", images: image ? [image] : [] } };
+  return { title: "Generated HH Goa 2026 Builder ID", description: "Open this generated HH Goa Builder ID. #FrameInGoa", openGraph: { title: "Generated HH Goa 2026 Builder ID", description: "Less Noise. More Signal. #FrameInGoa", images: image ? [{ url: image, secureUrl: image, width: 1536, height: 1024, alt: "Generated HH Goa 2026 Builder ID", type: "image/jpeg" }] : [], type: "website", url: `/share/${id}` }, twitter: { card: "summary_large_image", title: "Generated HH Goa 2026 Builder ID", description: "Open this generated HH Goa Builder ID. #FrameInGoa", images: image ? [{ url: image, alt: "Generated HH Goa 2026 Builder ID" }] : [] } };
 }
 
 export default async function SharePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ image?: string }> }) {
