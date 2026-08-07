@@ -226,7 +226,7 @@ export function BuilderGenerator() {
     <Toaster theme="dark" position="top-center" richColors />
     <section className="generator-section" id="generator">
       <div className="section-heading">
-        <div className="section-heading-copy"><span>HH GOA 2026 / BUILDER ID</span><h2>Frame your Goa team.</h2><p>Bring every teammate into one unmistakable HH Goa identity—ready to download and share.</p></div>
+        <div className="section-heading-copy"><span>HH GOA 2026 / BUILDER ID</span><h2>Frame your Goa identity.</h2><p>Create a solo ID for yourself or bring teammates together in one unmistakable HH Goa frame.</p></div>
         <div className="event-brand-lockup" aria-label="Hacker House Goa by 2:47">
           <img className="event-wordmark" src="/brand/hhgoa-hacker-house.png" alt="Hacker House" />
           <div><img src="/brand/hhgoa-goa.svg" alt="Goa" /><img src="/brand/hhgoa-247.svg" alt="2:47" /></div>
@@ -238,19 +238,19 @@ export function BuilderGenerator() {
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={step} className="step-content" initial={reduce ? false : { opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={reduce ? {} : { opacity: 0, x: -10 }} transition={{ duration: .18 }}>
               {step === 1 && <>
-                <div className="step-kicker">01 / BUILD YOUR CREW</div><h3>Choose your team.</h3><p className="step-copy">Select the team size, then add one photo for every member. Portrait, landscape, and square photos are framed automatically.</p>
-                <div className="team-size-picker" aria-label="Team size"><span>HOW MANY MEMBERS?</span><div>{([1, 2, 3] as TeamSize[]).map((size) => <button type="button" key={size} className={teamSize === size ? "selected" : ""} onClick={() => changeTeamSize(size)}><Users size={16} /> {size}</button>)}</div></div>
+                <div className="step-kicker">01 / PICK A FORMAT</div><h3>Choose your frame style.</h3><p className="step-copy">Make an individual spotlight or a shared team frame—the choice is only about this graphic, not the size of your actual team.</p>
+                <div className="team-size-picker" aria-label="Frame format"><span>FRAME FORMAT</span><div>{([1, 2, 3] as TeamSize[]).map((size) => <button type="button" key={size} className={teamSize === size ? "selected" : ""} onClick={() => changeTeamSize(size)}><Users size={16} /> {(["SOLO", "DUO", "TRIO"] as const)[size - 1]}</button>)}</div></div>
                 <div {...getRootProps()} className={`drop-zone team-drop-zone ${isDragActive ? "dragging" : ""}`}>
                   <input {...getInputProps()} />
                   <div className="team-photo-slots">{Array.from({ length: teamSize }, (_, index) => <article className={`team-photo-slot ${photos[index] ? "filled" : ""}`} key={index}>
                     <div className="member-photo-thumb" style={photos[index] ? { backgroundImage: `url(${photos[index]})` } : undefined}>{!photos[index] && <ImagePlus size={25} />}</div>
-                    <strong>MEMBER {index + 1}</strong>
+                    <strong>{teamSize === 1 ? "YOUR PHOTO" : `MEMBER ${index + 1}`}</strong>
                     <div className="member-photo-actions"><button type="button" onClick={() => choosePhoto(index)} disabled={processingIndex !== null}><Upload size={14} /> {processingIndex === index ? "PROCESSING…" : photos[index] ? "REPLACE" : "CHOOSE"}</button><button type="button" aria-label={`Open camera for member ${index + 1}`} onClick={() => openCamera(index)} disabled={processingIndex !== null}><Camera size={15} /></button></div>
                   </article>)}</div>
                   <small>JPG, PNG, WEBP, HEIC · max 20 MB each</small>
                 </div>
                 <input ref={cameraInputRef} type="file" accept="image/*" capture="user" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void acceptFile(file, cameraTargetRef.current); event.currentTarget.value = ""; }} />
-                <button className="primary-button full" type="button" disabled={!photosReady || processingIndex !== null} onClick={() => setStep(2)}>CONTINUE WITH {teamSize} MEMBER{teamSize > 1 ? "S" : ""}</button>
+                <button className="primary-button full" type="button" disabled={!photosReady || processingIndex !== null} onClick={() => setStep(2)}>CONTINUE WITH {teamSize === 1 ? "SOLO" : `${teamSize}-PERSON`} FRAME</button>
               </>}
               {step === 2 && <>
                 <div className="step-kicker">02 / MAKE IT YOURS</div><h3>{teamSize === 1 ? "Tell us who is building." : "Name the team behind the build."}</h3><div className="auto-frame-note"><Check size={16} /> {teamSize} photo{teamSize > 1 ? "s" : ""} framed automatically. <button onClick={() => setStep(1)}>Replace photos</button></div>
