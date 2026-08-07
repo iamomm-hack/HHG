@@ -29,6 +29,10 @@ body,
   box-shadow: 0 20px 55px rgba(0, 0, 0, 0.18);
 }
 
+.controls-panel {
+  scroll-margin-top: 12px;
+}
+
 .steps button.active {
   color: #f4e9ca;
   background: rgba(11, 104, 57, 0.24);
@@ -698,7 +702,7 @@ body {
 
 @media (max-width: 560px) {
   .step-actions {
-    background: #fffdf7;
+    background: #f6eedb;
   }
 
   .section-heading {
@@ -711,5 +715,38 @@ body {
     min-height: 118px;
     padding: 19px 21px 15px;
     box-shadow: 6px 7px 0 #ff0080;
+  }
+
+  .generator-section {
+    background:
+      radial-gradient(circle at 85% 2%, rgba(255, 0, 128, 0.045), transparent 22%),
+      linear-gradient(180deg, #f8f0dc 0%, #e9f0e4 100%);
+  }
+
+  .controls-panel,
+  .preview-panel {
+    background: #f2ead6;
+  }
+
+  .step-content,
+  .steps,
+  .preview-toolbar {
+    background-color: #f6eedb;
+  }
+
+  .team-size-picker,
+  .drop-zone,
+  .team-photo-slot,
+  .field input,
+  .field textarea,
+  .export-list > button,
+  .segmented {
+    background-color: #fff8e8;
+  }
+
+  .preview-stage {
+    background:
+      radial-gradient(circle at center, rgba(255, 250, 235, 0.88), transparent 54%),
+      #deeadb;
   }
 }

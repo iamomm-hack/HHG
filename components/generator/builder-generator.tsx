@@ -29,13 +29,16 @@ export function BuilderGenerator() {
   const uploadTargetRef = useRef(0);
   const cameraTargetRef = useRef(0);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const controlsPanelRef = useRef<HTMLDivElement | null>(null);
   const sharingRef = useRef(false);
+  const sharePreparingRef = useRef<Promise<string> | null>(null);
   const [processingIndex, setProcessingIndex] = useState<number | null>(null);
   const [step, setStep] = useState(1);
   const [details, setDetails] = useState<BuilderDetails>(emptyDetails);
   const [memberNames, setMemberNames] = useState<string[]>(["", "", ""]);
   const [reroll, setReroll] = useState(0);
   const [exporting, setExporting] = useState<string | null>(null);
+  const [preparedShareUrl, setPreparedShareUrl] = useState("");
   const [sessionSeed, setSessionSeed] = useState("hhgoa-session");
 
   const title = useMemo(() => generateTitle(details, reroll), [details, reroll]);
@@ -67,6 +70,11 @@ export function BuilderGenerator() {
     } catch {}
   }, []);
   useEffect(() => { try { sessionStorage.setItem("hhgoa-details", JSON.stringify(details)); } catch {} }, [details]);
+  useEffect(() => {
+    if (step === 1) return;
+    const frame = window.requestAnimationFrame(() => controlsPanelRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [step, reduce]);
 
   const acceptFile = useCallback(async (file: File, index: number) => {
     setProcessingIndex(index);
@@ -127,6 +135,36 @@ export function BuilderGenerator() {
     if (!valid.success) throw new Error(valid.error.issues[0]?.message || "Complete the required details.");
   }
   async function createCardBlob() { assertReady(); return (await exportBuilderCard(cardInput)).blob; }
+  const prepareShareLink = useCallback(async () => {
+    if (preparedShareUrl) return preparedShareUrl;
+    if (sharePreparingRef.current) return sharePreparingRef.current;
+    const task = (async () => {
+      const shareId = crypto.randomUUID().replaceAll("-", "").slice(0, 16);
+      const publicUrl = new URL(`/share/${shareId}`, window.location.origin).toString();
+      const blob = await exportBuilderSharePreview(cardInput);
+      const file = new File([blob], `hh-goa-2026-${slug}-${cardKind}-preview.jpg`, { type: "image/jpeg" });
+      const body = new FormData();
+      body.append("id", shareId);
+      body.append("image", file);
+      const response = await fetch("/api/share", { method: "POST", body });
+      if (!response.ok) throw new Error("The X image preview could not be uploaded.");
+      setPreparedShareUrl(publicUrl);
+      return publicUrl;
+    })();
+    sharePreparingRef.current = task;
+    try { return await task; }
+    finally { sharePreparingRef.current = null; }
+  }, [preparedShareUrl, cardInput, slug, cardKind]);
+
+  useEffect(() => {
+    setPreparedShareUrl("");
+    sharePreparingRef.current = null;
+  }, [cardInput]);
+
+  useEffect(() => {
+    if (step === 3 && canExport && !preparedShareUrl) void prepareShareLink().catch(() => undefined);
+  }, [step, canExport, preparedShareUrl, prepareShareLink]);
+
   async function runExport() {
     if (!canExport) { toast.error(photosReady ? "Complete your name, role, and stack first." : `Upload ${teamSize} member photo${teamSize > 1 ? "s" : ""} first.`); return; }
     setExporting("card");
@@ -141,24 +179,16 @@ export function BuilderGenerator() {
     if (sharingRef.current) return;
     if (!canExport) { toast.error("Finish your team identity before sharing."); return; }
     sharingRef.current = true;
-    const shareId = crypto.randomUUID().replaceAll("-", "").slice(0, 16);
-    const publicUrl = new URL(`/share/${shareId}`, window.location.origin).toString();
-    const intent = xIntent(publicUrl);
-    // This stays synchronous with the click, so X appears immediately while
-    // the small OG preview renders and uploads in the original tab.
-    const xWindow = window.open(intent, "_blank");
-    if (xWindow) xWindow.opener = null;
     setExporting("share");
     try {
-      if (!xWindow) window.location.assign(intent);
-      const blob = await exportBuilderSharePreview(cardInput);
-      const file = new File([blob], `hh-goa-2026-${slug}-${cardKind}-preview.jpg`, { type: "image/jpeg" });
-      const body = new FormData();
-      body.append("id", shareId);
-      body.append("image", file);
-      const response = await fetch("/api/share", { method: "POST", body });
-      if (!response.ok) throw new Error("X opened, but the image preview upload failed. Try Share on X again.");
-      toast.success("X opened instantly. Your generated image preview is available through the share link.");
+      const publicUrl = await prepareShareLink();
+      const intent = xIntent(publicUrl);
+      const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobileDevice) window.location.assign(intent);
+      else {
+        const xWindow = window.open(intent, "_blank", "noopener,noreferrer");
+        if (!xWindow) window.location.assign(intent);
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The X image preview could not be prepared.");
     } finally { sharingRef.current = false; setExporting(null); }
@@ -187,7 +217,7 @@ export function BuilderGenerator() {
         </div>
       </div>
       <div className="workspace">
-        <div className="controls-panel">
+        <div className="controls-panel" ref={controlsPanelRef}>
           <nav className="steps three-steps" aria-label="Generator steps">{([[1, "PHOTO"], [2, "DETAILS"], [3, "EXPORT"]] as const).map(([number, label]) => <button key={number} onClick={() => number <= step && setStep(number)} className={step === number ? "active" : step > number ? "done" : ""}><span>{step > number ? <Check size={14} /> : `0${number}`}</span>{label}</button>)}</nav>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={step} className="step-content" initial={reduce ? false : { opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={reduce ? {} : { opacity: 0, x: -10 }} transition={{ duration: .18 }}>
