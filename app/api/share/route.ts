@@ -16,10 +16,12 @@ export async function POST(request: Request) {
   try {
     const body = await request.formData();
     const image = body.get("image");
-    if (!(image instanceof File) || image.type !== "image/png") return NextResponse.json({ error: "A PNG is required." }, { status: 400 });
+    const requestedId = body.get("id");
+    if (!(image instanceof File) || !["image/png", "image/jpeg", "image/webp"].includes(image.type)) return NextResponse.json({ error: "A PNG, JPEG, or WEBP image is required." }, { status: 400 });
     if (image.size > 8 * 1024 * 1024) return NextResponse.json({ error: "PNG is too large." }, { status: 413 });
-    const id = crypto.randomUUID().replaceAll("-", "").slice(0, 16);
-    const blob = await put(`hh-goa-shares/${id}.png`, image, { access: "public", contentType: "image/png", addRandomSuffix: false });
+    const id = typeof requestedId === "string" && /^[a-f0-9]{16}$/.test(requestedId) ? requestedId : crypto.randomUUID().replaceAll("-", "").slice(0, 16);
+    const extension = image.type === "image/jpeg" ? "jpg" : image.type === "image/webp" ? "webp" : "png";
+    const blob = await put(`hh-goa-shares/${id}.${extension}`, image, { access: "public", contentType: image.type, addRandomSuffix: false });
     const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
     const page = new URL(`/share/${id}`, origin);
     return NextResponse.json({ id, url: page.toString(), image: blob.url });

@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getBuilderCardLayout } from "@/lib/export/builder-card-layout";
 import { renderBuilderCard } from "@/lib/export/render-builder-card";
 import type { BuilderCardRenderInput } from "@/types/builder-card";
 
 export function BuilderCardPreview({ input }: { input: BuilderCardRenderInput }) {
+  const layout = getBuilderCardLayout(input.teamSize);
+  const previewWidth = Math.round(layout.templateWidth / 2);
+  const previewHeight = Math.round(layout.templateHeight / 2);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hasRenderedRef = useRef(false);
   const [status, setStatus] = useState<"rendering" | "ready" | "error">("rendering");
@@ -19,8 +23,8 @@ export function BuilderCardPreview({ input }: { input: BuilderCardRenderInput })
         const debug = process.env.NODE_ENV !== "production" && new URLSearchParams(window.location.search).get("debugCard") === "1";
         const buffer = document.createElement("canvas");
         // The live canvas is half-size for fast typing on phones; final downloads
-        // still render at the full 1536 × 1024 export resolution.
-        await renderBuilderCard(buffer, input, { width: 768, height: 512, debug });
+        // still render at the template's full native resolution.
+        await renderBuilderCard(buffer, input, { width: previewWidth, height: previewHeight, debug });
         if (!active || !canvasRef.current) return;
         const visible = canvasRef.current;
         visible.width = buffer.width;
@@ -36,10 +40,10 @@ export function BuilderCardPreview({ input }: { input: BuilderCardRenderInput })
       }
     }, 70);
     return () => { active = false; window.clearTimeout(timer); };
-  }, [input]);
+  }, [input, previewHeight, previewWidth]);
 
-  return <div className="builder-card-canvas-wrap" aria-busy={status === "rendering"}>
-    <canvas ref={canvasRef} width={768} height={512} aria-label="Live HH Goa Builder Card preview" />
+  return <div className="builder-card-canvas-wrap" style={{ aspectRatio: `${layout.templateWidth} / ${layout.templateHeight}` }} aria-busy={status === "rendering"}>
+    <canvas ref={canvasRef} style={{ aspectRatio: `${layout.templateWidth} / ${layout.templateHeight}` }} width={previewWidth} height={previewHeight} aria-label="Live HH Goa Team Card preview" />
     {status === "rendering" && <span className="canvas-status">Rendering preview…</span>}
     {status === "error" && <span className="canvas-error" role="alert">{error}</span>}
   </div>;

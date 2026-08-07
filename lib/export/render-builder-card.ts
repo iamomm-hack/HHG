@@ -1,7 +1,7 @@
-import { BUILDER_CARD_HEIGHT, BUILDER_CARD_TEMPLATE_URL, BUILDER_CARD_WIDTH, builderCardLayout } from "@/lib/export/builder-card-layout";
+import { getBuilderCardLayout } from "@/lib/export/builder-card-layout";
 import { drawCoverImage } from "@/lib/image/draw-cover-image";
 import { loadBrowserImage } from "@/lib/image/load-browser-image";
-import type { BuilderCardRenderInput, LayoutTextRegion } from "@/types/builder-card";
+import type { BuilderCardLayout, BuilderCardRenderInput, LayoutTextRegion } from "@/types/builder-card";
 
 interface RenderOptions { width?: number; height?: number; debug?: boolean }
 
@@ -62,7 +62,7 @@ function roundedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, wi
   ctx.closePath();
 }
 
-function drawXHandle(ctx: CanvasRenderingContext2D, username: string, icon: HTMLImageElement, scale: number) {
+function drawXHandle(ctx: CanvasRenderingContext2D, username: string, icon: HTMLImageElement, region: BuilderCardLayout["social"], scale: number) {
   const cleanUsername = username.replace(/^@+/, "").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 39);
   if (!cleanUsername) return;
 
@@ -74,15 +74,15 @@ function drawXHandle(ctx: CanvasRenderingContext2D, username: string, icon: HTML
   const height = 56 * scale;
   ctx.save();
   ctx.font = `700 ${fontSize}px "Victor Mono", monospace`;
-  const maxTextWidth = 440 * scale - horizontalPadding * 2 - iconSize - gap;
+  const maxTextWidth = region.maxWidth * scale - horizontalPadding * 2 - iconSize - gap;
   while (fontSize > 15 * scale && ctx.measureText(handle).width > maxTextWidth) {
     fontSize -= scale;
     ctx.font = `700 ${fontSize}px "Victor Mono", monospace`;
   }
   const textWidth = ctx.measureText(handle).width;
-  const width = Math.min(440 * scale, Math.max(220 * scale, horizontalPadding * 2 + iconSize + gap + textWidth));
-  const x = 1190 * scale - width / 2;
-  const y = 610 * scale;
+  const width = Math.min(region.maxWidth * scale, Math.max(190 * scale, horizontalPadding * 2 + iconSize + gap + textWidth));
+  const x = region.centerX * scale - width / 2;
+  const y = region.y * scale;
 
   roundedRectPath(ctx, x, y, width, height, 13 * scale);
   ctx.fillStyle = "rgba(246, 224, 177, 0.86)";
@@ -107,16 +107,16 @@ function drawXHandle(ctx: CanvasRenderingContext2D, username: string, icon: HTML
   ctx.restore();
 }
 
-function drawBuilderStatement(ctx: CanvasRenderingContext2D, statement: string, scale: number) {
+function drawBuilderStatement(ctx: CanvasRenderingContext2D, statement: string, region: BuilderCardLayout["statement"], scale: number) {
   const cleanStatement = statement.replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 90);
   if (!cleanStatement) return;
 
-  const maxWidth = 430 * scale;
-  const maxLines = 3;
+  const maxWidth = region.maxWidth * scale;
+  const maxLines = region.maxLines;
   ctx.save();
   const words = cleanStatement.split(" ");
   const wrapAt = (fontSize: number) => {
-    ctx.font = `700 ${fontSize * scale}px "Victor Mono", monospace`;
+    ctx.font = `900 ${fontSize * scale}px "Victor Mono", monospace`;
     const wrapped: string[] = [];
     let current = "";
     for (const word of words) {
@@ -128,7 +128,7 @@ function drawBuilderStatement(ctx: CanvasRenderingContext2D, statement: string, 
     return wrapped;
   };
 
-  let fontSize = 21;
+  let fontSize = region.maxFontSize;
   let lines = wrapAt(fontSize);
   while (lines.length > 2 && fontSize > 16) {
     fontSize -= 1;
@@ -145,13 +145,19 @@ function drawBuilderStatement(ctx: CanvasRenderingContext2D, statement: string, 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#063d2f";
-  const startY = (visibleLines.length === 1 ? 700 : visibleLines.length === 2 ? 690 : 681) * scale;
-  visibleLines.forEach((line, index) => ctx.fillText(line, 1190 * scale, startY + index * lineHeight, maxWidth));
+  ctx.strokeStyle = "#063d2f";
+  ctx.lineWidth = 0.55 * scale;
+  ctx.lineJoin = "round";
+  const startY = (region.startY - Math.max(0, visibleLines.length - 1) * (fontSize + 4) / 2) * scale;
+  visibleLines.forEach((line, index) => {
+    const y = startY + index * lineHeight;
+    ctx.strokeText(line, region.centerX * scale, y, maxWidth);
+    ctx.fillText(line, region.centerX * scale, y, maxWidth);
+  });
   ctx.restore();
 }
 
-function redrawPortraitInnerBorder(ctx: CanvasRenderingContext2D, scale: number) {
-  const { portrait } = builderCardLayout;
+function redrawPortraitInnerBorder(ctx: CanvasRenderingContext2D, portrait: BuilderCardLayout["portraits"][number], scale: number) {
   ctx.save();
   ctx.beginPath();
   ctx.ellipse(
@@ -169,11 +175,13 @@ function redrawPortraitInnerBorder(ctx: CanvasRenderingContext2D, scale: number)
   ctx.restore();
 }
 
-function drawDebugOverlay(ctx: CanvasRenderingContext2D, scale: number) {
-  const { portrait, name, builderTitle, roleStack, builderNumberLabel, builderNumber } = builderCardLayout;
+function drawDebugOverlay(ctx: CanvasRenderingContext2D, layout: BuilderCardLayout, scale: number) {
+  const { portraits, name, builderTitle, roleStack, builderNumberLabel, builderNumber } = layout;
   ctx.save(); ctx.strokeStyle = "#00e5ff"; ctx.fillStyle = "#00e5ff"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.ellipse(portrait.centerX * scale, portrait.centerY * scale, portrait.radiusX * scale, portrait.radiusY * scale, 0, 0, Math.PI * 2); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo((portrait.centerX - 16) * scale, portrait.centerY * scale); ctx.lineTo((portrait.centerX + 16) * scale, portrait.centerY * scale); ctx.moveTo(portrait.centerX * scale, (portrait.centerY - 16) * scale); ctx.lineTo(portrait.centerX * scale, (portrait.centerY + 16) * scale); ctx.stroke();
+  for (const portrait of portraits) {
+    ctx.beginPath(); ctx.ellipse(portrait.centerX * scale, portrait.centerY * scale, portrait.radiusX * scale, portrait.radiusY * scale, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo((portrait.centerX - 16) * scale, portrait.centerY * scale); ctx.lineTo((portrait.centerX + 16) * scale, portrait.centerY * scale); ctx.moveTo(portrait.centerX * scale, (portrait.centerY - 16) * scale); ctx.lineTo(portrait.centerX * scale, (portrait.centerY + 16) * scale); ctx.stroke();
+  }
   for (const [label, region] of [["NAME", name], ["TITLE", builderTitle], ["ROLE/STACK", roleStack], ["NUMBER LABEL", builderNumberLabel], ["NUMBER", builderNumber]] as const) {
     const left = (region.centerX - region.maxWidth / 2) * scale; const y = region.baselineY * scale;
     ctx.strokeRect(left, y - region.fontSize * scale, region.maxWidth * scale, region.fontSize * 1.25 * scale);
@@ -183,24 +191,32 @@ function drawDebugOverlay(ctx: CanvasRenderingContext2D, scale: number) {
 }
 
 export async function renderBuilderCard(canvas: HTMLCanvasElement, input: BuilderCardRenderInput, options: RenderOptions = {}) {
-  const width = options.width ?? BUILDER_CARD_WIDTH;
-  const height = options.height ?? BUILDER_CARD_HEIGHT;
-  const scaleX = width / builderCardLayout.templateWidth;
-  const scaleY = height / builderCardLayout.templateHeight;
-  if (Math.abs(scaleX - scaleY) > 0.0001) throw new Error("Builder Card output must preserve the template aspect ratio.");
+  const layout = getBuilderCardLayout(input.teamSize);
+  const width = options.width ?? layout.templateWidth;
+  const height = options.height ?? layout.templateHeight;
+  const scaleX = width / layout.templateWidth;
+  const scaleY = height / layout.templateHeight;
+  if (Math.abs(scaleX - scaleY) > 0.001) throw new Error("Builder Card output must preserve the template aspect ratio.");
   canvas.width = width; canvas.height = height;
   const ctx = canvas.getContext("2d", { alpha: false });
   if (!ctx) throw new Error("Canvas rendering is unavailable in this browser.");
   ctx.clearRect(0, 0, width, height);
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
   await document.fonts.ready.catch(() => undefined);
-  const template = await loadBrowserImage(BUILDER_CARD_TEMPLATE_URL, true);
+  const template = await loadBrowserImage(layout.templateUrl, true);
   const xIcon = input.details.xUsername ? await loadBrowserImage("/icons/x-logo.png", true) : null;
   ctx.drawImage(template, 0, 0, width, height);
-  if (input.photoUrl) {
-    const photo = await loadBrowserImage(input.photoUrl);
-    drawCoverImage(ctx, photo, { ...builderCardLayout.portrait, renderScale: scaleX, transform: input.photoTransform, sourceCrop: input.photoCrop });
-    redrawPortraitInnerBorder(ctx, scaleX);
+  for (let index = 0; index < layout.portraits.length; index += 1) {
+    const photoUrl = input.photoUrls[index];
+    if (!photoUrl) continue;
+    const photo = await loadBrowserImage(photoUrl);
+    drawCoverImage(ctx, photo, { ...layout.portraits[index], renderScale: scaleX, transform: input.photoTransforms[index] ?? { zoom: 1, offsetX: 0, offsetY: 0 }, sourceCrop: input.photoCrops[index] ?? null });
+    redrawPortraitInnerBorder(ctx, layout.portraits[index], scaleX);
+  }
+  if (input.teamSize > 1) {
+    layout.memberNames.forEach((region, index) => {
+      drawCenteredText(ctx, normalizeDisplayText(input.memberNames[index] ?? "").slice(0, 26), region, scaleX);
+    });
   }
   const name = normalizeDisplayText(input.details.name).slice(0, 38);
   const title = normalizeDisplayText(input.details.builderTitle).slice(0, 42);
@@ -208,12 +224,12 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   const stack = truncateStackDisplay(input.details.stack);
   const roleStack = [role, stack].filter(Boolean).join(" · ");
   const number = `#${input.details.builderNumber.replace(/\D/g, "").slice(-4).padStart(4, "0")}`;
-  drawCenteredText(ctx, name, builderCardLayout.name, scaleX);
-  drawCenteredText(ctx, name && role && stack ? title : "", builderCardLayout.builderTitle, scaleX);
-  drawCenteredText(ctx, roleStack, builderCardLayout.roleStack, scaleX);
-  if (xIcon) drawXHandle(ctx, input.details.xUsername, xIcon, scaleX);
-  drawBuilderStatement(ctx, input.details.statement, scaleX);
-  drawCenteredText(ctx, name ? "BUILDER NO." : "", builderCardLayout.builderNumberLabel, scaleX);
-  drawCenteredText(ctx, name ? number : "", builderCardLayout.builderNumber, scaleX);
-  if (options.debug && process.env.NODE_ENV !== "production") drawDebugOverlay(ctx, scaleX);
+  drawCenteredText(ctx, name, layout.name, scaleX);
+  drawCenteredText(ctx, name && role && stack ? title : "", layout.builderTitle, scaleX);
+  drawCenteredText(ctx, roleStack, layout.roleStack, scaleX);
+  if (xIcon) drawXHandle(ctx, input.details.xUsername, xIcon, layout.social, scaleX);
+  drawBuilderStatement(ctx, input.details.statement, layout.statement, scaleX);
+  drawCenteredText(ctx, name ? "BUILDER NO." : "", layout.builderNumberLabel, scaleX);
+  drawCenteredText(ctx, name ? number : "", layout.builderNumber, scaleX);
+  if (options.debug && process.env.NODE_ENV !== "production") drawDebugOverlay(ctx, layout, scaleX);
 }

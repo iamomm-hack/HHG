@@ -1,5 +1,7 @@
 import type { PixelCrop } from "@/types/builder";
 
+export type TeamSize = 1 | 2 | 3;
+
 export interface BuilderCardDetails {
   name: string;
   role: string;
@@ -23,9 +25,11 @@ export interface CropState {
 
 export interface BuilderCardRenderInput {
   details: BuilderCardDetails;
-  photoUrl: string | null;
-  photoTransform: PhotoTransform;
-  photoCrop: PixelCrop | null;
+  teamSize: TeamSize;
+  memberNames: string[];
+  photoUrls: Array<string | null>;
+  photoTransforms: PhotoTransform[];
+  photoCrops: Array<PixelCrop | null>;
 }
 
 export interface LayoutTextRegion {
@@ -42,14 +46,18 @@ export interface LayoutTextRegion {
 }
 
 export interface BuilderCardLayout {
+  templateUrl: string;
   templateWidth: number;
   templateHeight: number;
-  portrait: { centerX: number; centerY: number; radiusX: number; radiusY: number };
+  portraits: Array<{ centerX: number; centerY: number; radiusX: number; radiusY: number }>;
+  memberNames: LayoutTextRegion[];
   name: LayoutTextRegion;
   builderTitle: LayoutTextRegion;
   roleStack: LayoutTextRegion;
   builderNumberLabel: LayoutTextRegion;
   builderNumber: LayoutTextRegion;
+  social: { centerX: number; y: number; maxWidth: number };
+  statement: { centerX: number; startY: number; maxWidth: number; maxLines: number; maxFontSize: number };
 }
 
 export interface BuilderCardExportResult {

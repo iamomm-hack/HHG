@@ -3,61 +3,232 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Camera, Check, Clipboard, Download, ImagePlus, RefreshCw, Share2, Sparkles, Upload } from "lucide-react";
+import { Camera, Check, Clipboard, Download, ImagePlus, RefreshCw, Share2, Sparkles, Upload, Users } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import { builderNumber, generateTitle } from "@/lib/builder-title/generate-title";
+import { getBuilderCardLayout } from "@/lib/export/builder-card-layout";
+import { exportBuilderCard, exportBuilderSharePreview } from "@/lib/export/export-builder-card";
 import { prepareImage } from "@/lib/image/process";
-import { builderDetailsSchema } from "@/lib/validation/builder-details";
 import { SHARE_CAPTION, xIntent } from "@/lib/share/x";
+import { builderDetailsSchema } from "@/lib/validation/builder-details";
 import type { BuilderDetails } from "@/types/builder";
-import type { BuilderCardRenderInput } from "@/types/builder-card";
-import { exportBuilderCard } from "@/lib/export/export-builder-card";
+import type { BuilderCardRenderInput, TeamSize } from "@/types/builder-card";
 import { BuilderCardPreview } from "@/components/generator/builder-card-preview";
 
-const roleSuggestions=["Developer","Designer","Founder","Builder","Researcher","Engineer","Student","Product Engineer","Smart Contract Developer","Protocol Engineer","Community Builder","Open-Source Contributor"];
-const stackSuggestions=["Rust","React","Next.js","TypeScript","Solidity","Move","AI","Backend","Full Stack","Mobile","Design","DevRel","Open Source","Infrastructure"];
-const emptyDetails: BuilderDetails={name:"",role:"",stack:[],x:"",statement:""};
+const roleSuggestions = ["Developer", "Designer", "Founder", "Builder", "Researcher", "Engineer", "Student", "Product Engineer", "Smart Contract Developer", "Protocol Engineer", "Community Builder", "Open-Source Contributor"];
+const stackSuggestions = ["Rust", "React", "Next.js", "TypeScript", "Solidity", "Move", "AI", "Backend", "Full Stack", "Mobile", "Design", "DevRel", "Open Source", "Infrastructure"];
+const emptyDetails: BuilderDetails = { name: "", role: "", stack: [], x: "", statement: "" };
+const emptyPhotos: Array<string | null> = [null, null, null];
+const photoTransform = { zoom: 1, offsetX: 0, offsetY: 0 } as const;
 
-export function BuilderGenerator(){
-  const reduce=useReducedMotion();
-  const [photo,setPhoto]=useState<string|null>(null); const photoRef=useRef<string|null>(null);
-  const cameraInputRef=useRef<HTMLInputElement|null>(null);
-  const sharingRef=useRef(false);
-  const [processing,setProcessing]=useState(false); const [step,setStep]=useState(1);
-  const [details,setDetails]=useState<BuilderDetails>(emptyDetails); const [reroll,setReroll]=useState(0);
-  const [exporting,setExporting]=useState<string|null>(null);
-  const [sessionSeed,setSessionSeed]=useState("hhgoa-session");
-  const title=useMemo(()=>generateTitle(details,reroll),[details,reroll]); const number=useMemo(()=>builderNumber(details.name,sessionSeed),[details.name,sessionSeed]);
-  const cardInput=useMemo<BuilderCardRenderInput>(()=>({details:{name:details.name,role:details.role,stack:details.stack,xUsername:details.x,statement:details.statement,builderTitle:title,builderNumber:number},photoUrl:photo,photoTransform:{zoom:1,offsetX:0,offsetY:0},photoCrop:null}),[details.name,details.role,details.stack,details.x,details.statement,title,number,photo]);
+export function BuilderGenerator() {
+  const reduce = useReducedMotion();
+  const [teamSize, setTeamSize] = useState<TeamSize>(1);
+  const [photos, setPhotos] = useState<Array<string | null>>(emptyPhotos);
+  const photoRefs = useRef<Array<string | null>>([...emptyPhotos]);
+  const uploadTargetRef = useRef(0);
+  const cameraTargetRef = useRef(0);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const sharingRef = useRef(false);
+  const [processingIndex, setProcessingIndex] = useState<number | null>(null);
+  const [step, setStep] = useState(1);
+  const [details, setDetails] = useState<BuilderDetails>(emptyDetails);
+  const [memberNames, setMemberNames] = useState<string[]>(["", "", ""]);
+  const [reroll, setReroll] = useState(0);
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [sessionSeed, setSessionSeed] = useState("hhgoa-session");
 
-  useEffect(()=>{try{const raw=sessionStorage.getItem("hhgoa-details");if(raw){const stored={...emptyDetails,...JSON.parse(raw)} as BuilderDetails;setDetails({...stored,stack:stored.stack.filter(value=>value!=="Soroban"&&value!=="Stellar")})}sessionStorage.removeItem("hhgoa-theme");let storedSeed=sessionStorage.getItem("hhgoa-seed");if(!storedSeed){storedSeed=crypto.randomUUID();sessionStorage.setItem("hhgoa-seed",storedSeed)}setSessionSeed(storedSeed);}catch{}},[]);
-  useEffect(()=>{try{sessionStorage.setItem("hhgoa-details",JSON.stringify(details))}catch{}},[details]);
-  useEffect(()=>{const paste=(event:ClipboardEvent)=>{const f=[...(event.clipboardData?.files??[])].find(x=>x.type.startsWith("image/"));if(f)void acceptFile(f)};window.addEventListener("paste",paste);return()=>window.removeEventListener("paste",paste)},[]);
-  useEffect(()=>()=>{if(photoRef.current)URL.revokeObjectURL(photoRef.current)},[]);
+  const title = useMemo(() => generateTitle(details, reroll), [details, reroll]);
+  const number = useMemo(() => builderNumber(details.name, sessionSeed), [details.name, sessionSeed]);
+  const layout = getBuilderCardLayout(teamSize);
+  const requiredPhotos = photos.slice(0, teamSize);
+  const photosReady = requiredPhotos.every(Boolean);
+  const memberNamesReady = teamSize === 1 || memberNames.slice(0, teamSize).every((name) => name.trim().length > 0);
+  const cardInput = useMemo<BuilderCardRenderInput>(() => ({
+    details: { name: details.name, role: details.role, stack: details.stack, xUsername: teamSize === 1 ? details.x : "", statement: details.statement, builderTitle: title, builderNumber: number },
+    teamSize,
+    memberNames: teamSize === 1 ? [details.name] : memberNames.slice(0, teamSize),
+    photoUrls: photos.slice(0, teamSize),
+    photoTransforms: Array.from({ length: teamSize }, () => ({ ...photoTransform })),
+    photoCrops: Array.from({ length: teamSize }, () => null),
+  }), [details.name, details.role, details.stack, details.x, details.statement, title, number, teamSize, memberNames, photos]);
 
-  const acceptFile=useCallback(async(file:File)=>{setProcessing(true);try{const blob=await prepareImage(file);const url=URL.createObjectURL(blob);if(photoRef.current)URL.revokeObjectURL(photoRef.current);photoRef.current=url;setPhoto(url);setStep(2);toast.success("Photo automatically framed. Add your builder details.")}catch(error){toast.error(error instanceof Error?error.message:"Could not process that photo.")}finally{setProcessing(false)}},[]);
-  const onDrop=useCallback((files:File[])=>{if(files[0])void acceptFile(files[0])},[acceptFile]);
-  const {getRootProps,getInputProps,isDragActive,open}=useDropzone({onDrop,noClick:true,noKeyboard:true,multiple:false,accept:{"image/jpeg":[".jpg",".jpeg"],"image/png":[".png"],"image/webp":[".webp"],"image/heic":[".heic"],"image/heif":[".heif"]}});
-  const valid=builderDetailsSchema.safeParse(details); const canExport=Boolean(photo&&valid.success&&!processing);
-  const slug=(details.name||"builder").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,42)||"builder";
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("hhgoa-details");
+      if (raw) {
+        const stored = { ...emptyDetails, ...JSON.parse(raw) } as BuilderDetails;
+        setDetails({ ...stored, stack: stored.stack.filter((value) => value !== "Soroban" && value !== "Stellar") });
+      }
+      sessionStorage.removeItem("hhgoa-theme");
+      let storedSeed = sessionStorage.getItem("hhgoa-seed");
+      if (!storedSeed) { storedSeed = crypto.randomUUID(); sessionStorage.setItem("hhgoa-seed", storedSeed); }
+      setSessionSeed(storedSeed);
+    } catch {}
+  }, []);
+  useEffect(() => { try { sessionStorage.setItem("hhgoa-details", JSON.stringify(details)); } catch {} }, [details]);
 
-  function assertReady(){if(!photo)throw new Error("Add a photo first.");if(!valid.success)throw new Error(valid.error.issues[0]?.message||"Complete the required details.")}
-  async function createCardBlob(){assertReady();return (await exportBuilderCard(cardInput)).blob}
-  async function runExport(){if(!canExport){toast.error(photo?"Complete your name, role, and stack first.":"Upload a photo first.");return}setExporting("card");try{const mod=await import("@/lib/export/render");mod.downloadBlob(await createCardBlob(),`hh-goa-2026-${slug}-builder-card.png`);toast.success("High-resolution PNG downloaded.")}catch(e){toast.error(e instanceof Error?e.message:"Export failed. Please try again.")}finally{setExporting(null)}}
-  async function share(){if(sharingRef.current)return;if(!canExport){toast.error("Finish your builder identity before sharing.");return}sharingRef.current=true;const isMobileDevice=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);const canAttemptFileShare=isMobileDevice&&typeof navigator.share==="function"&&typeof navigator.canShare==="function";const xWindow=canAttemptFileShare?null:window.open("about:blank","_blank");if(xWindow)xWindow.opener=null;setExporting("share");try{const blob=await createCardBlob();const file=new File([blob],`hh-goa-2026-${slug}-builder-card.png`,{type:"image/png"});if(canAttemptFileShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:SHARE_CAPTION,title:"HH Goa 2026 Builder Identity"});toast.success("Builder Card shared as an attached image.");return}catch(error){if(error instanceof DOMException&&error.name==="AbortError")return}}let publicUrl="";try{const capability=await fetch("/api/share",{method:"GET",cache:"no-store"});if(capability.ok){const state=await capability.json() as {configured:boolean};if(state.configured){const body=new FormData();body.append("image",file);const res=await fetch("/api/share",{method:"POST",body});if(res.ok){const data=await res.json() as {url:string};publicUrl=data.url}}}}catch{}if(!publicUrl){const{downloadBlob}=await import("@/lib/export/render");downloadBlob(blob,file.name);toast.info("X web cannot auto-attach a local file. Card downloaded—attach it, then press Post.",{duration:10000})}else{toast.success("X opened with your caption and image preview link.")}const intent=xIntent(publicUrl||undefined);if(xWindow)xWindow.location.replace(intent);else window.location.assign(intent)}catch(e){xWindow?.close();toast.error(e instanceof Error?e.message:"Could not open X. Try Download Card instead.")}finally{sharingRef.current=false;setExporting(null)}}
-  const setField=<K extends keyof BuilderDetails>(key:K,value:BuilderDetails[K])=>setDetails(d=>({...d,[key]:value}));
-  const toggleStack=(value:string)=>setDetails(d=>({...d,stack:d.stack.includes(value)?d.stack.filter(s=>s!==value):d.stack.length<5?[...d.stack,value]:d.stack}));
-  const generateIdentity=()=>{if(!valid.success){toast.error(valid.error?.issues[0]?.message||"Complete the required details.");return}let nextSeed=crypto.randomUUID();while(builderNumber(details.name,nextSeed)===number)nextSeed=crypto.randomUUID();setSessionSeed(nextSeed);try{sessionStorage.setItem("hhgoa-seed",nextSeed)}catch{}setStep(3)};
-  return <main><Toaster theme="dark" position="top-center" richColors/>
-    <section className="generator-section" id="generator"><div className="section-heading"><span>01—03 / YOUR ENTRY</span><h2>Team - Locals.</h2><p>Upload, identify, export.</p></div>
-      <div className="workspace"><div className="controls-panel"><nav className="steps three-steps" aria-label="Generator steps">{([[1,"PHOTO"],[2,"DETAILS"],[3,"EXPORT"]] as const).map(([n,label])=><button key={n} onClick={()=>n<=step&&setStep(n)} className={step===n?"active":step>n?"done":""}><span>{step>n?<Check size={14}/>:`0${n}`}</span>{label}</button>)}</nav>
-        <AnimatePresence mode="wait" initial={false}><motion.div key={step} className="step-content" initial={reduce?false:{opacity:0,x:10}} animate={{opacity:1,x:0}} exit={reduce?{}:{opacity:0,x:-10}} transition={{duration:.18}}>
-          {step===1&&<><div className="step-kicker">SOURCE / LOCAL ONLY</div><h3>Choose your photo.</h3><p className="step-copy">Any portrait, landscape or square photo works.</p><div {...getRootProps()} className={`drop-zone ${isDragActive?"dragging":""}`}><input {...getInputProps()}/><div className="upload-mark"><ImagePlus/></div><strong>{processing?"Processing photo…":"Drop your signal here"}</strong><span>JPG, PNG, WEBP, HEIC · max 20 MB</span><button className="primary-button compact" type="button" onClick={open} disabled={processing}><Upload size={17}/> CHOOSE PHOTO</button><small><Clipboard size={13}/></small></div><input ref={cameraInputRef} type="file" accept="image/*" capture="user" hidden onChange={event=>{const file=event.currentTarget.files?.[0];if(file)void acceptFile(file);event.currentTarget.value=""}}/><button className="camera-button" type="button" onClick={()=>cameraInputRef.current?.click()} disabled={processing}><Camera size={18}/> Open camera</button></>}
-          {step===2&&<><div className="step-kicker">IDENTITY / FAST FIELDS</div><h3>What are you building as?</h3><div className="auto-frame-note"><Check size={16}/> Photo framed automatically. <button onClick={()=>setStep(1)}>Replace photo</button></div><label className="field"><span>NAME <b>{details.name.length}/38</b></span><input value={details.name} maxLength={38} placeholder="Your name" onChange={e=>setField("name",e.target.value.replace(/[<>]/g,""))}/></label><div className="field"><span>PRIMARY ROLE</span><div className="chips">{roleSuggestions.map(r=><button key={r} className={details.role===r?"selected":""} onClick={()=>setField("role",r)}>{r}</button>)}</div><input value={details.role} maxLength={40} placeholder="Or type a custom role" onChange={e=>setField("role",e.target.value.replace(/[<>]/g,""))}/></div><div className="field"><span>PRIMARY STACK <b>{details.stack.length}/5</b></span><div className="chips">{stackSuggestions.map(s=><button key={s} className={details.stack.includes(s)?"selected":""} onClick={()=>toggleStack(s)}>{s}</button>)}</div><input placeholder="Add custom technology + Enter" maxLength={24} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();const v=e.currentTarget.value.trim().replace(/[<>]/g,"");if(v&&!details.stack.includes(v)&&details.stack.length<5){toggleStack(v);e.currentTarget.value=""}}}}/></div><label className="field"><span>X USERNAME <small>OPTIONAL</small></span><input value={details.x} maxLength={39} placeholder="username" aria-label="X username" autoComplete="off" onChange={e=>setField("x",e.target.value.replace(/^@/,"").replace(/[^a-zA-Z0-9_]/g,""))}/></label><label className="field"><span>BUILDER STATEMENT (Optional) <b>{details.statement.length}/90</b></span><textarea value={details.statement} maxLength={90} placeholder="What are you here to ship?" onChange={e=>setField("statement",e.target.value.replace(/[<>]/g,""))}/></label><div className="generated-title"><span>GENERATED BUILDER TITLE</span><strong>{title}</strong><button aria-label="Reroll builder title" onClick={()=>setReroll(r=>r+1)}><RefreshCw size={16}/></button></div>{!valid.success&&details.name&&<p className="validation" role="alert">{valid.error.issues[0]?.message}</p>}<button className="primary-button full" onClick={generateIdentity}>GENERATE MY IDENTITY <Sparkles size={17}/></button></>}
-          {step===3&&<><div className="step-kicker">EXPORT / REAL PNG</div><h3>Your builder card is ready.</h3><p className="step-copy"></p><div className="export-list"><button onClick={()=>void runExport()} disabled={Boolean(exporting)}><span><b>{exporting==="card"?"Rendering your card…":"Builder ID Card"}</b><small>1536 × 1024 PNG</small></span><Download/></button></div><div className="share-box"><h4>Ready to frame in Goa?</h4><div className="radar-note">✦ Caption includes @247pmstudio and #FrameInGoa to get featured in the Radar.</div><div className="share-actions"><button className="x-button" onClick={()=>void share()} disabled={Boolean(exporting)}><Share2 size={18}/> {exporting==="share"?"PREPARING IMAGE…":"SHARE TO X"}</button><button className="copy-button" onClick={async()=>{await navigator.clipboard.writeText(SHARE_CAPTION);toast.success("Caption copied.")}}><Clipboard size={16}/> COPY CAPTION</button></div></div></>}
-        </motion.div></AnimatePresence></div>
-        <aside className="preview-panel"><div className="preview-toolbar"><div className="segmented"><button className="active" type="button">ID CARD</button></div></div><motion.div className="preview-stage card-stage" layout><motion.div initial={reduce?false:{opacity:0,scale:.97}} animate={{opacity:1,scale:1}}><BuilderCardPreview input={cardInput}/></motion.div></motion.div></aside>
-      </div></section>
-    <footer className="site-footer"><div className="footer-mark">HH<span>GOA</span></div><p>Less Noise. More Signal.</p><div>GOA, INDIA · 28–31 OCT 2026<br/><span>2:47 pm Studio · गोवा</span></div></footer>
+  const acceptFile = useCallback(async (file: File, index: number) => {
+    setProcessingIndex(index);
+    try {
+      const blob = await prepareImage(file);
+      const url = URL.createObjectURL(blob);
+      if (photoRefs.current[index]) URL.revokeObjectURL(photoRefs.current[index]!);
+      photoRefs.current[index] = url;
+      setPhotos((current) => current.map((photo, photoIndex) => photoIndex === index ? url : photo));
+      toast.success(`Member ${index + 1} photo framed automatically.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not process that photo.");
+    } finally { setProcessingIndex(null); }
+  }, []);
+
+  useEffect(() => {
+    const paste = (event: ClipboardEvent) => {
+      const file = [...(event.clipboardData?.files ?? [])].find((item) => item.type.startsWith("image/"));
+      if (!file) return;
+      const target = photos.slice(0, teamSize).findIndex((photo) => !photo);
+      void acceptFile(file, target === -1 ? 0 : target);
+    };
+    window.addEventListener("paste", paste);
+    return () => window.removeEventListener("paste", paste);
+  }, [acceptFile, photos, teamSize]);
+  useEffect(() => () => { photoRefs.current.forEach((url) => { if (url) URL.revokeObjectURL(url); }); }, []);
+
+  const onDrop = useCallback((files: File[]) => {
+    if (files[0]) void acceptFile(files[0], uploadTargetRef.current);
+  }, [acceptFile]);
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+    onDrop, noClick: true, noKeyboard: true, multiple: false,
+    accept: { "image/jpeg": [".jpg", ".jpeg"], "image/png": [".png"], "image/webp": [".webp"], "image/heic": [".heic"], "image/heif": [".heif"] },
+  });
+
+  const choosePhoto = (index: number) => { uploadTargetRef.current = index; open(); };
+  const openCamera = (index: number) => { cameraTargetRef.current = index; cameraInputRef.current?.click(); };
+  const changeTeamSize = (size: TeamSize) => {
+    setTeamSize(size);
+    setStep(1);
+    if (size < 3) {
+      for (let index = size; index < 3; index += 1) {
+        if (photoRefs.current[index]) URL.revokeObjectURL(photoRefs.current[index]!);
+        photoRefs.current[index] = null;
+      }
+      setPhotos((current) => current.map((photo, index) => index < size ? photo : null));
+    }
+  };
+
+  const valid = builderDetailsSchema.safeParse(details);
+  const canExport = Boolean(photosReady && memberNamesReady && valid.success && processingIndex === null);
+  const slug = (details.name || "builder").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 42) || "builder";
+  const cardKind = teamSize === 1 ? "builder" : "team";
+
+  function assertReady() {
+    if (!photosReady) throw new Error(`Add all ${teamSize} team photo${teamSize > 1 ? "s" : ""} first.`);
+    if (!memberNamesReady) throw new Error("Add a name for every team member.");
+    if (!valid.success) throw new Error(valid.error.issues[0]?.message || "Complete the required details.");
+  }
+  async function createCardBlob() { assertReady(); return (await exportBuilderCard(cardInput)).blob; }
+  async function runExport() {
+    if (!canExport) { toast.error(photosReady ? "Complete your name, role, and stack first." : `Upload ${teamSize} member photo${teamSize > 1 ? "s" : ""} first.`); return; }
+    setExporting("card");
+    try {
+      const mod = await import("@/lib/export/render");
+      mod.downloadBlob(await createCardBlob(), `hh-goa-2026-${slug}-${cardKind}-card.png`);
+      toast.success("High-resolution PNG downloaded.");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Export failed. Please try again."); }
+    finally { setExporting(null); }
+  }
+  async function share() {
+    if (sharingRef.current) return;
+    if (!canExport) { toast.error("Finish your team identity before sharing."); return; }
+    sharingRef.current = true;
+    const shareId = crypto.randomUUID().replaceAll("-", "").slice(0, 16);
+    const publicUrl = new URL(`/share/${shareId}`, window.location.origin).toString();
+    const intent = xIntent(publicUrl);
+    // This stays synchronous with the click, so X appears immediately while
+    // the small OG preview renders and uploads in the original tab.
+    const xWindow = window.open(intent, "_blank");
+    if (xWindow) xWindow.opener = null;
+    setExporting("share");
+    try {
+      if (!xWindow) window.location.assign(intent);
+      const blob = await exportBuilderSharePreview(cardInput);
+      const file = new File([blob], `hh-goa-2026-${slug}-${cardKind}-preview.jpg`, { type: "image/jpeg" });
+      const body = new FormData();
+      body.append("id", shareId);
+      body.append("image", file);
+      const response = await fetch("/api/share", { method: "POST", body });
+      if (!response.ok) throw new Error("X opened, but the image preview upload failed. Try Share on X again.");
+      toast.success("X opened instantly. Your generated image preview is available through the share link.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The X image preview could not be prepared.");
+    } finally { sharingRef.current = false; setExporting(null); }
+  }
+
+  const setField = <K extends keyof BuilderDetails>(key: K, value: BuilderDetails[K]) => setDetails((current) => ({ ...current, [key]: value }));
+  const setMemberName = (index: number, value: string) => setMemberNames((current) => current.map((name, memberIndex) => memberIndex === index ? value.replace(/[<>]/g, "") : name));
+  const toggleStack = (value: string) => setDetails((current) => ({ ...current, stack: current.stack.includes(value) ? current.stack.filter((stack) => stack !== value) : current.stack.length < 5 ? [...current.stack, value] : current.stack }));
+  const generateIdentity = () => {
+    if (!valid.success) { toast.error(valid.error?.issues[0]?.message || "Complete the required details."); return; }
+    let nextSeed = crypto.randomUUID();
+    while (builderNumber(details.name, nextSeed) === number) nextSeed = crypto.randomUUID();
+    setSessionSeed(nextSeed);
+    try { sessionStorage.setItem("hhgoa-seed", nextSeed); } catch {}
+    setStep(3);
+  };
+
+  return <main>
+    <Toaster theme="dark" position="top-center" richColors />
+    <section className="generator-section" id="generator">
+      <div className="section-heading">
+        <div className="section-heading-copy"><span>HH GOA 2026 / BUILDER ID</span><h2>Frame your Goa team.</h2><p>Bring every teammate into one unmistakable HH Goa identity—ready to download and share.</p></div>
+        <div className="event-brand-lockup" aria-label="Hacker House Goa by 2:47">
+          <img className="event-wordmark" src="/brand/hhgoa-hacker-house.png" alt="Hacker House" />
+          <div><img src="/brand/hhgoa-goa.svg" alt="Goa" /><img src="/brand/hhgoa-247.svg" alt="2:47" /></div>
+        </div>
+      </div>
+      <div className="workspace">
+        <div className="controls-panel">
+          <nav className="steps three-steps" aria-label="Generator steps">{([[1, "PHOTO"], [2, "DETAILS"], [3, "EXPORT"]] as const).map(([number, label]) => <button key={number} onClick={() => number <= step && setStep(number)} className={step === number ? "active" : step > number ? "done" : ""}><span>{step > number ? <Check size={14} /> : `0${number}`}</span>{label}</button>)}</nav>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={step} className="step-content" initial={reduce ? false : { opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={reduce ? {} : { opacity: 0, x: -10 }} transition={{ duration: .18 }}>
+              {step === 1 && <>
+                <div className="step-kicker">01 / BUILD YOUR CREW</div><h3>Choose your team.</h3><p className="step-copy">Select the team size, then add one photo for every member. Portrait, landscape, and square photos are framed automatically.</p>
+                <div className="team-size-picker" aria-label="Team size"><span>HOW MANY MEMBERS?</span><div>{([1, 2, 3] as TeamSize[]).map((size) => <button type="button" key={size} className={teamSize === size ? "selected" : ""} onClick={() => changeTeamSize(size)}><Users size={16} /> {size}</button>)}</div></div>
+                <div {...getRootProps()} className={`drop-zone team-drop-zone ${isDragActive ? "dragging" : ""}`}>
+                  <input {...getInputProps()} />
+                  <div className="team-photo-slots">{Array.from({ length: teamSize }, (_, index) => <article className={`team-photo-slot ${photos[index] ? "filled" : ""}`} key={index}>
+                    <div className="member-photo-thumb" style={photos[index] ? { backgroundImage: `url(${photos[index]})` } : undefined}>{!photos[index] && <ImagePlus size={25} />}</div>
+                    <strong>MEMBER {index + 1}</strong>
+                    <div className="member-photo-actions"><button type="button" onClick={() => choosePhoto(index)} disabled={processingIndex !== null}><Upload size={14} /> {processingIndex === index ? "PROCESSING…" : photos[index] ? "REPLACE" : "CHOOSE"}</button><button type="button" aria-label={`Open camera for member ${index + 1}`} onClick={() => openCamera(index)} disabled={processingIndex !== null}><Camera size={15} /></button></div>
+                  </article>)}</div>
+                  <small>JPG, PNG, WEBP, HEIC · max 20 MB each</small>
+                </div>
+                <input ref={cameraInputRef} type="file" accept="image/*" capture="user" hidden onChange={(event) => { const file = event.currentTarget.files?.[0]; if (file) void acceptFile(file, cameraTargetRef.current); event.currentTarget.value = ""; }} />
+                <button className="primary-button full" type="button" disabled={!photosReady || processingIndex !== null} onClick={() => setStep(2)}>CONTINUE WITH {teamSize} MEMBER{teamSize > 1 ? "S" : ""}</button>
+              </>}
+              {step === 2 && <>
+                <div className="step-kicker">02 / MAKE IT YOURS</div><h3>{teamSize === 1 ? "Tell us who is building." : "Name the team behind the build."}</h3><div className="auto-frame-note"><Check size={16} /> {teamSize} photo{teamSize > 1 ? "s" : ""} framed automatically. <button onClick={() => setStep(1)}>Replace photos</button></div>
+                <label className="field"><span>{teamSize === 1 ? "NAME" : "TEAM NAME"} <b>{details.name.length}/38</b></span><input value={details.name} maxLength={38} placeholder={teamSize === 1 ? "Your name" : "Your team name"} onChange={(event) => setField("name", event.target.value.replace(/[<>]/g, ""))} /></label>
+                {teamSize > 1 && <div className="member-name-section"><span>TEAM MEMBER NAMES</span><div className="member-name-grid">{Array.from({ length: teamSize }, (_, index) => <label className="field" key={index}><span>MEMBER {index + 1} NAME <b>{memberNames[index].length}/26</b></span><input value={memberNames[index]} maxLength={26} placeholder={`Member ${index + 1} name`} onChange={(event) => setMemberName(index, event.target.value)} /></label>)}</div></div>}
+                <div className="field"><span>PRIMARY ROLE</span><div className="chips">{roleSuggestions.map((role) => <button key={role} className={details.role === role ? "selected" : ""} onClick={() => setField("role", role)}>{role}</button>)}</div><input value={details.role} maxLength={40} placeholder="Or type a custom role" onChange={(event) => setField("role", event.target.value.replace(/[<>]/g, ""))} /></div>
+                <div className="field"><span>PRIMARY STACK <b>{details.stack.length}/5</b></span><div className="chips">{stackSuggestions.map((stack) => <button key={stack} className={details.stack.includes(stack) ? "selected" : ""} onClick={() => toggleStack(stack)}>{stack}</button>)}</div><input placeholder="Add custom technology + Enter" maxLength={24} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); const value = event.currentTarget.value.trim().replace(/[<>]/g, ""); if (value && !details.stack.includes(value) && details.stack.length < 5) { toggleStack(value); event.currentTarget.value = ""; } } }} /></div>
+                {teamSize === 1 && <label className="field"><span>X USERNAME <small>OPTIONAL</small></span><input value={details.x} maxLength={39} placeholder="username" aria-label="X username" autoComplete="off" onChange={(event) => setField("x", event.target.value.replace(/^@/, "").replace(/[^a-zA-Z0-9_]/g, ""))} /></label>}
+                <label className="field"><span>BUILDER STATEMENT (Optional) <b>{details.statement.length}/90</b></span><textarea value={details.statement} maxLength={90} placeholder="What are you here to ship?" onChange={(event) => setField("statement", event.target.value.replace(/[<>]/g, ""))} /></label>
+                <div className="generated-title"><span>GENERATED BUILDER TITLE</span><strong>{title}</strong><button aria-label="Reroll builder title" onClick={() => setReroll((value) => value + 1)}><RefreshCw size={16} /></button></div>
+                {!valid.success && details.name && <p className="validation" role="alert">{valid.error.issues[0]?.message}</p>}
+                <button className="primary-button full" disabled={!memberNamesReady} onClick={generateIdentity}>GENERATE {teamSize > 1 ? "TEAM" : "MY"} IDENTITY <Sparkles size={17} /></button>
+              </>}
+              {step === 3 && <>
+                <div className="step-kicker">03 / READY TO SHIP</div><h3>Your HH Goa identity is ready.</h3><p className="step-copy">Download the full-resolution card or share it with the Goa builder community.</p>
+                <div className="export-list"><button onClick={() => void runExport()} disabled={Boolean(exporting)}><span><b>{exporting === "card" ? "Rendering your card…" : "Builder ID Card"}</b><small>{layout.templateWidth} × {layout.templateHeight} PNG · {teamSize} member{teamSize > 1 ? "s" : ""}</small></span><Download /></button></div>
+                <div className="share-box"><h4>Ready to frame in Goa?</h4><div className="radar-note">✦ Caption includes @247pmstudio and #FrameInGoa to get featured in the Radar.</div><div className="share-actions"><button className="x-button" onClick={() => void share()} disabled={Boolean(exporting)}><Share2 size={18} /> {exporting === "share" ? "PREPARING IMAGE…" : "SHARE TO X"}</button><button className="copy-button" onClick={async () => { try { await navigator.clipboard.writeText(SHARE_CAPTION); toast.success("Caption copied."); } catch { toast.error("Could not copy. Select and copy the caption manually."); } }}><Clipboard size={16} /> COPY CAPTION</button></div></div>
+              </>}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+        <aside className="preview-panel"><div className="preview-toolbar"><div className="segmented"><button className="active" type="button">{teamSize > 1 ? `TEAM × ${teamSize}` : "ID CARD"}</button></div><span>{layout.templateWidth} × {layout.templateHeight}</span></div><motion.div className="preview-stage card-stage" layout><motion.div initial={reduce ? false : { opacity: 0, scale: .97 }} animate={{ opacity: 1, scale: 1 }}><BuilderCardPreview input={cardInput} /></motion.div></motion.div></aside>
+      </div>
+    </section>
+    <footer className="site-footer"><div className="footer-brand-assets"><img src="/brand/hhgoa-hacker-house.png" alt="Hacker House" /><div><img src="/brand/hhgoa-goa.svg" alt="Goa" /><img src="/brand/hhgoa-247.svg" alt="2:47" /></div></div><p>Less Noise. More Signal.</p><div>GOA, INDIA · 28–31 OCT 2026<br /><span>2:47 pm Studio · गोवा</span></div></footer>
   </main>;
 }
