@@ -144,8 +144,8 @@ function drawBuilderStatement(ctx: CanvasRenderingContext2D, statement: string, 
 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = "#063d2f";
-  ctx.strokeStyle = "#063d2f";
+  ctx.fillStyle = region.color ?? "#063d2f";
+  ctx.strokeStyle = region.color ?? "#063d2f";
   ctx.lineWidth = 0.55 * scale;
   ctx.lineJoin = "round";
   const startY = (region.startY - Math.max(0, visibleLines.length - 1) * (fontSize + 4) / 2) * scale;

@@ -6,6 +6,8 @@ interface DrawCoverOptions {
   centerY: number;
   radiusX: number;
   radiusY: number;
+  overscan?: number;
+  fitMode?: "cover" | "oval-fit";
   renderScale: number;
   transform: PhotoTransform;
   sourceCrop?: PixelCrop | null;
@@ -28,12 +30,16 @@ export function drawCoverImage(ctx: CanvasRenderingContext2D, image: HTMLImageEl
 
   if (sourceCrop && sourceCrop.width > 0 && sourceCrop.height > 0) {
     ctx.drawImage(image, sourceCrop.x, sourceCrop.y, sourceCrop.width, sourceCrop.height, centerX - radiusX, centerY - radiusY, targetWidth, targetHeight);
+  } else if (options.fitMode === "oval-fit" && image.naturalWidth / image.naturalHeight >= 0.72 && image.naturalWidth / image.naturalHeight <= 1.35) {
+    // Solo ID portraits and square photos should show the complete submitted
+    // image inside the oval instead of being enlarged and cropped by `cover`.
+    ctx.drawImage(image, centerX - radiusX, centerY - radiusY, targetWidth, targetHeight);
   } else {
     // Always cover the portrait opening. The previous contain fallback exposed
     // rectangular photo edges (and dark/empty bands) inside oval team frames.
     // A small overscan also keeps antialiased image edges safely beneath the
     // template's inner frame line.
-    const frameOverscan = 1.035;
+    const frameOverscan = options.overscan ?? 1.035;
     const baseScale = Math.max(targetWidth / image.naturalWidth, targetHeight / image.naturalHeight) * frameOverscan;
     const drawScale = baseScale * Math.max(1, transform.zoom);
     const width = image.naturalWidth * drawScale;

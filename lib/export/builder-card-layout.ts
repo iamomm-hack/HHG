@@ -6,20 +6,20 @@ const text = (centerX: number, baselineY: number, maxWidth: number, fontSize: nu
 
 export const builderCardLayouts: Record<TeamSize, BuilderCardLayout> = {
   1: {
-    templateUrl: "/templates/hh-goa-builder-card-template-v3.jpg",
+    templateUrl: "/templates/hh-goa-builder-card-template-v4.jpg",
     templateWidth: 1280,
     templateHeight: 853,
-    portraits: [{ centerX: 570, centerY: 393, radiusX: 196, radiusY: 224 }],
+    portraits: [{ centerX: 573, centerY: 399, radiusX: 203, radiusY: 225, fitMode: "oval-fit" }],
     memberNames: [],
     memberSocials: [],
     teamName: { ...text(1015, 344, 405, 36, 24, "Victor Mono", "#b92e59", 1, 1), fontWeight: 900 },
-    name: text(1015, 407, 420, 58, 34, "Imbue", "#063d2f"),
+    name: text(1015, 407, 420, 58, 34, "Imbue", "#fee101"),
     builderTitle: text(1015, 457, 405, 29, 18, "Victor Mono", "#b92e59", 1.1, 1),
-    roleStack: text(1015, 496, 405, 18, 12, "Victor Mono", "#063d2f", 0.8, 0.9),
-    builderNumberLabel: text(875, 677, 112, 14, 11, "Victor Mono", "#b92e59", 1.2, 0.65),
-    builderNumber: text(875, 718, 90, 22, 15, "Victor Mono", "#b92e59", 1.7, 0.9),
+    roleStack: text(1015, 496, 405, 18, 12, "Victor Mono", "#f6e0b1", 0.8, 0.9),
+    builderNumberLabel: text(849, 625, 160, 15, 11, "Victor Mono", "#b92e59", 1.1, 0.7),
+    builderNumber: text(849, 711, 92, 22, 15, "Victor Mono", "#b92e59", 1.5, 0.9),
     social: { centerX: 1015, y: 520, maxWidth: 405 },
-    statement: { centerX: 1015, startY: 608, maxWidth: 405, maxLines: 2, maxFontSize: 19 },
+    statement: { centerX: 1015, startY: 608, maxWidth: 405, maxLines: 2, maxFontSize: 19, color: "#f6e0b1" },
   },
   2: {
     templateUrl: "/templates/hh-goa-team-2-template.png",

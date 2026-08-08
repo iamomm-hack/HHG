@@ -51,7 +51,7 @@ export interface BuilderCardLayout {
   templateUrl: string;
   templateWidth: number;
   templateHeight: number;
-  portraits: Array<{ centerX: number; centerY: number; radiusX: number; radiusY: number }>;
+  portraits: Array<{ centerX: number; centerY: number; radiusX: number; radiusY: number; overscan?: number; fitMode?: "cover" | "oval-fit" }>;
   memberNames: LayoutTextRegion[];
   memberSocials: Array<{ centerX: number; y: number; maxWidth: number }>;
   teamName: LayoutTextRegion;
@@ -61,7 +61,7 @@ export interface BuilderCardLayout {
   builderNumberLabel: LayoutTextRegion;
   builderNumber: LayoutTextRegion;
   social: { centerX: number; y: number; maxWidth: number };
-  statement: { centerX: number; startY: number; maxWidth: number; maxLines: number; maxFontSize: number };
+  statement: { centerX: number; startY: number; maxWidth: number; maxLines: number; maxFontSize: number; color?: string };
 }
 
 export interface BuilderCardExportResult {
