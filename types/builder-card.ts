@@ -28,6 +28,7 @@ export interface BuilderCardRenderInput {
   details: BuilderCardDetails;
   teamSize: TeamSize;
   memberNames: string[];
+  memberRoles: string[];
   memberXUsernames: string[];
   photoUrls: Array<string | null>;
   photoTransforms: PhotoTransform[];
@@ -53,6 +54,8 @@ export interface BuilderCardLayout {
   templateHeight: number;
   portraits: Array<{ centerX: number; centerY: number; radiusX: number; radiusY: number; overscan?: number; fitMode?: "cover" | "oval-fit" }>;
   memberNames: LayoutTextRegion[];
+  memberRoles: LayoutTextRegion[];
+  memberTags: LayoutTextRegion[];
   memberSocials: Array<{ centerX: number; y: number; maxWidth: number }>;
   teamName: LayoutTextRegion;
   name: LayoutTextRegion;
@@ -62,6 +65,7 @@ export interface BuilderCardLayout {
   builderNumber: LayoutTextRegion;
   social: { centerX: number; y: number; maxWidth: number };
   statement: { centerX: number; startY: number; maxWidth: number; maxLines: number; maxFontSize: number; color?: string };
+  showGlobalDetails?: boolean;
 }
 
 export interface BuilderCardExportResult {

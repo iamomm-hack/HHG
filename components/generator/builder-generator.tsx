@@ -36,6 +36,7 @@ export function BuilderGenerator() {
   const [step, setStep] = useState(1);
   const [details, setDetails] = useState<BuilderDetails>(emptyDetails);
   const [memberNames, setMemberNames] = useState<string[]>(["", "", ""]);
+  const [memberRoles, setMemberRoles] = useState<string[]>(["", "", ""]);
   const [memberXUsernames, setMemberXUsernames] = useState<string[]>(["", "", ""]);
   const [reroll, setReroll] = useState(0);
   const [exporting, setExporting] = useState<string | null>(null);
@@ -53,11 +54,12 @@ export function BuilderGenerator() {
     details: { teamName: teamSize === 1 ? details.teamName : details.name, name: details.name, role: details.role, stack: details.stack, xUsername: teamSize === 1 ? details.x : "", statement: details.statement, builderTitle: title, builderNumber: number },
     teamSize,
     memberNames: teamSize === 1 ? [details.name] : memberNames.slice(0, teamSize),
+    memberRoles: teamSize > 1 ? memberRoles.slice(0, teamSize) : [],
     memberXUsernames: teamSize > 1 ? memberXUsernames.slice(0, teamSize) : [],
     photoUrls: photos.slice(0, teamSize),
     photoTransforms: Array.from({ length: teamSize }, () => ({ ...photoTransform })),
     photoCrops: Array.from({ length: teamSize }, () => null),
-  }), [details.teamName, details.name, details.role, details.stack, details.x, details.statement, title, number, teamSize, memberNames, memberXUsernames, photos]);
+  }), [details.teamName, details.name, details.role, details.stack, details.x, details.statement, title, number, teamSize, memberNames, memberRoles, memberXUsernames, photos]);
 
   useEffect(() => {
     try {
@@ -211,6 +213,7 @@ export function BuilderGenerator() {
 
   const setField = <K extends keyof BuilderDetails>(key: K, value: BuilderDetails[K]) => setDetails((current) => ({ ...current, [key]: value }));
   const setMemberName = (index: number, value: string) => setMemberNames((current) => current.map((name, memberIndex) => memberIndex === index ? value.replace(/[<>]/g, "") : name));
+  const setMemberRole = (index: number, value: string) => setMemberRoles((current) => current.map((role, memberIndex) => memberIndex === index ? value.replace(/[<>]/g, "") : role));
   const setMemberXUsername = (index: number, value: string) => setMemberXUsernames((current) => current.map((username, memberIndex) => memberIndex === index ? value.replace(/^@/, "").replace(/[^a-zA-Z0-9_]/g, "") : username));
   const toggleStack = (value: string) => setDetails((current) => ({ ...current, stack: current.stack.includes(value) ? current.stack.filter((stack) => stack !== value) : current.stack.length < 5 ? [...current.stack, value] : current.stack }));
   const generateIdentity = () => {
@@ -256,7 +259,7 @@ export function BuilderGenerator() {
                 <div className="step-kicker">02 / MAKE IT YOURS</div><h3>{teamSize === 1 ? "Tell us who is building." : "Name the team behind the build."}</h3><div className="auto-frame-note"><Check size={16} /> {teamSize} photo{teamSize > 1 ? "s" : ""} framed automatically. <button onClick={() => setStep(1)}>Replace photos</button></div>
                 {teamSize === 1 && <label className="field"><span>TEAM NAME <b>{details.teamName.length}/38</b></span><input value={details.teamName} maxLength={38} placeholder="Your team name" onChange={(event) => setField("teamName", event.target.value.replace(/[<>]/g, ""))} /></label>}
                 <label className="field"><span>{teamSize === 1 ? "NAME" : "TEAM NAME"} <b>{details.name.length}/38</b></span><input value={details.name} maxLength={38} placeholder={teamSize === 1 ? "Your name" : "Your team name"} onChange={(event) => setField("name", event.target.value.replace(/[<>]/g, ""))} /></label>
-                {teamSize > 1 && <div className="member-name-section"><span>TEAM MEMBER NAMES</span><div className="member-name-grid">{Array.from({ length: teamSize }, (_, index) => <div className="member-identity-fields" key={index}><label className="field"><span>MEMBER {index + 1} NAME <b>{memberNames[index].length}/26</b></span><input value={memberNames[index]} maxLength={26} placeholder={`Member ${index + 1} name`} onChange={(event) => setMemberName(index, event.target.value)} /></label><label className="field"><span>MEMBER {index + 1} X <small>OPTIONAL</small></span><input value={memberXUsernames[index]} maxLength={39} placeholder="X username" autoComplete="off" onChange={(event) => setMemberXUsername(index, event.target.value)} /></label></div>)}</div></div>}
+                {teamSize > 1 && <div className="member-name-section"><span>TEAM MEMBER DETAILS</span><div className="member-name-grid">{Array.from({ length: teamSize }, (_, index) => <div className="member-identity-fields" key={index}><label className="field"><span>MEMBER {index + 1} NAME <b>{memberNames[index].length}/26</b></span><input value={memberNames[index]} maxLength={26} placeholder={`Member ${index + 1} name`} onChange={(event) => setMemberName(index, event.target.value)} /></label><label className="field"><span>MEMBER {index + 1} ROLE <b>{memberRoles[index].length}/32</b></span><input value={memberRoles[index]} maxLength={32} placeholder="Role" onChange={(event) => setMemberRole(index, event.target.value)} /></label><label className="field"><span>MEMBER {index + 1} X TAG <small>OPTIONAL</small></span><input value={memberXUsernames[index]} maxLength={39} placeholder="X username" autoComplete="off" onChange={(event) => setMemberXUsername(index, event.target.value)} /></label></div>)}</div></div>}
                 <div className="field"><span>PRIMARY ROLE</span><div className="chips">{roleSuggestions.map((role) => <button key={role} className={details.role === role ? "selected" : ""} onClick={() => setField("role", role)}>{role}</button>)}</div><input value={details.role} maxLength={40} placeholder="Or type a custom role" onChange={(event) => setField("role", event.target.value.replace(/[<>]/g, ""))} /></div>
                 <div className="field"><span>PRIMARY STACK <b>{details.stack.length}/5</b></span><div className="chips">{stackSuggestions.map((stack) => <button key={stack} className={details.stack.includes(stack) ? "selected" : ""} onClick={() => toggleStack(stack)}>{stack}</button>)}</div><input placeholder="Add custom technology + Enter" maxLength={24} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); const value = event.currentTarget.value.trim().replace(/[<>]/g, ""); if (value && !details.stack.includes(value) && details.stack.length < 5) { toggleStack(value); event.currentTarget.value = ""; } } }} /></div>
                 {teamSize === 1 && <label className="field"><span>X USERNAME <small>OPTIONAL</small></span><input value={details.x} maxLength={39} placeholder="username" aria-label="X username" autoComplete="off" onChange={(event) => setField("x", event.target.value.replace(/^@/, "").replace(/[^a-zA-Z0-9_]/g, ""))} /></label>}

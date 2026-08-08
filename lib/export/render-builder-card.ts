@@ -204,7 +204,7 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
   await document.fonts.ready.catch(() => undefined);
   const template = await loadBrowserImage(layout.templateUrl, true);
-  const hasXHandle = Boolean(input.details.xUsername || input.memberXUsernames.some((username) => username.trim()));
+  const hasXHandle = Boolean(input.details.xUsername || (layout.memberSocials.length && input.memberXUsernames.some((username) => username.trim())));
   const xIcon = hasXHandle ? await loadBrowserImage("/icons/x-logo.png", true) : null;
   ctx.drawImage(template, 0, 0, width, height);
   for (let index = 0; index < layout.portraits.length; index += 1) {
@@ -217,6 +217,13 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   if (input.teamSize > 1) {
     layout.memberNames.forEach((region, index) => {
       drawCenteredText(ctx, normalizeDisplayText(input.memberNames[index] ?? "").slice(0, 26), region, scaleX);
+    });
+    layout.memberRoles.forEach((region, index) => {
+      drawCenteredText(ctx, normalizeDisplayText(input.memberRoles[index] || input.details.role).slice(0, 32), region, scaleX);
+    });
+    layout.memberTags.forEach((region, index) => {
+      const username = (input.memberXUsernames[index] ?? "").replace(/^@+/, "").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 39);
+      drawCenteredText(ctx, username ? `@${username}` : "", region, scaleX);
     });
   }
   if (input.teamSize > 1 && xIcon) {
@@ -233,10 +240,12 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
   const number = `#${input.details.builderNumber.replace(/\D/g, "").slice(-4).padStart(4, "0")}`;
   if (input.teamSize === 1) drawCenteredText(ctx, teamName, layout.teamName, scaleX);
   drawCenteredText(ctx, name, layout.name, scaleX);
-  drawCenteredText(ctx, name && role && stack ? title : "", layout.builderTitle, scaleX);
-  drawCenteredText(ctx, roleStack, layout.roleStack, scaleX);
-  if (xIcon) drawXHandle(ctx, input.details.xUsername, xIcon, layout.social, scaleX);
-  drawBuilderStatement(ctx, input.details.statement, layout.statement, scaleX);
+  if (layout.showGlobalDetails !== false) {
+    drawCenteredText(ctx, name && role && stack ? title : "", layout.builderTitle, scaleX);
+    drawCenteredText(ctx, roleStack, layout.roleStack, scaleX);
+    if (xIcon) drawXHandle(ctx, input.details.xUsername, xIcon, layout.social, scaleX);
+    drawBuilderStatement(ctx, input.details.statement, layout.statement, scaleX);
+  }
   drawCenteredText(ctx, name ? "BUILDER NO." : "", layout.builderNumberLabel, scaleX);
   drawCenteredText(ctx, name ? number : "", layout.builderNumber, scaleX);
   if (options.debug && process.env.NODE_ENV !== "production") drawDebugOverlay(ctx, layout, scaleX);
