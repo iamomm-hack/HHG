@@ -28,7 +28,6 @@ export interface BuilderCardRenderInput {
   details: BuilderCardDetails;
   teamSize: TeamSize;
   memberNames: string[];
-  memberRoles: string[];
   memberXUsernames: string[];
   photoUrls: Array<string | null>;
   photoTransforms: PhotoTransform[];

@@ -61,7 +61,7 @@ export const builderCardLayouts: Record<TeamSize, BuilderCardLayout> = {
     portraits: [
       { centerX: 157, centerY: 558, radiusX: 101, radiusY: 104 },
       { centerX: 657, centerY: 558, radiusX: 101, radiusY: 104 },
-      { centerX: 1145, centerY: 558, radiusX: 101, radiusY: 104 },
+      { centerX: 1126, centerY: 557, radiusX: 92, radiusY: 96 },
     ],
     memberNames: [
       { ...text(408, 483, 190, 19, 12, "Victor Mono", "#f6e0b1", 0.5, 0.6), fontWeight: 900 },
@@ -83,8 +83,8 @@ export const builderCardLayouts: Record<TeamSize, BuilderCardLayout> = {
     name: text(768, 359, 590, 38, 24, "Victor Mono", "#fee101", 1.2, 0.8),
     builderTitle: text(768, 735, 1, 1, 1, "Victor Mono", "#fee101"),
     roleStack: text(768, 735, 1, 1, 1, "Victor Mono", "#fee101"),
-    builderNumberLabel: text(1390, 704, 135, 13, 10, "Victor Mono", "#ff0080", 0.9, 0.5),
-    builderNumber: text(1390, 733, 105, 20, 14, "Victor Mono", "#fee101", 1.3, 0.7),
+    builderNumberLabel: text(1360, 710, 145, 13, 10, "Victor Mono", "#ff0080", 0.9, 0.5),
+    builderNumber: text(1360, 744, 105, 20, 14, "Victor Mono", "#fee101", 1.3, 0.7),
     social: { centerX: 768, y: 735, maxWidth: 1 },
     statement: { centerX: 768, startY: 735, maxWidth: 1, maxLines: 1, maxFontSize: 1 },
     showGlobalDetails: false,

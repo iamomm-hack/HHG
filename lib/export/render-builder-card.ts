@@ -219,7 +219,7 @@ export async function renderBuilderCard(canvas: HTMLCanvasElement, input: Builde
       drawCenteredText(ctx, normalizeDisplayText(input.memberNames[index] ?? "").slice(0, 26), region, scaleX);
     });
     layout.memberRoles.forEach((region, index) => {
-      drawCenteredText(ctx, normalizeDisplayText(input.memberRoles[index] || input.details.role).slice(0, 32), region, scaleX);
+      drawCenteredText(ctx, normalizeDisplayText(input.details.role).slice(0, 32), region, scaleX);
     });
     layout.memberTags.forEach((region, index) => {
       const username = (input.memberXUsernames[index] ?? "").replace(/^@+/, "").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 39);
